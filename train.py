@@ -34,10 +34,11 @@ def train_model(dataTrain, model_dir):
     sess = tf.Session()
     sess.run(init)
 
-    load_model(0, saver, model_dir)
+    start_epoch=10
+    load_model(start_epoch, sess, saver, model_dir)
 
     train_time_sec = 0
-    for epoch in range(dataTrain.epochs):
+    for epoch in range(start_epoch, dataTrain.epochs):
         avg_loss = 0
         total_batch = 0
         dataTrain.reset()
@@ -51,7 +52,7 @@ def train_model(dataTrain, model_dir):
             total_batch += 1
 
         if total_batch > 0:
-            saver.save(sess, os.path.join(model_dir, "model" + str(epoch) + ".ckpt"))
+            saver.save(sess, os.path.join(model_dir, 'model'), global_step=epoch)
             print('Epoch: ', '%04d' % (epoch + 1), 'cost = %.4f' %
                   (avg_loss / total_batch))
             dataTrain.reset()
@@ -73,5 +74,5 @@ if __name__ == '__main__':
                         help="Directory to save model files.")
     args = parser.parse_args()
 
-    dataTrain = DataSet(args.input)
+    dataTrain = DataSet(args.input, epochs=100)
     train_model(dataTrain, args.model_dir)
