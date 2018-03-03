@@ -34,7 +34,7 @@ def train_model(dataTrain, model_dir):
     sess = tf.Session()
     sess.run(init)
 
-    start_epoch=10
+    start_epoch=0
     load_model(start_epoch, sess, saver, model_dir)
 
     train_time_sec = 0
@@ -74,5 +74,5 @@ if __name__ == '__main__':
                         help="Directory to save model files.")
     args = parser.parse_args()
 
-    dataTrain = DataSet(args.input, epochs=100)
+    dataTrain = DataSet(args.input, epochs=1000)
     train_model(dataTrain, args.model_dir)

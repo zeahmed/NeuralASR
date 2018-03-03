@@ -14,6 +14,7 @@ class DataSet:
         self.batch_size = batch_size
         self.epochs = epochs
         self.batch_idx = 0
+        self.cache = {}
         (self.X, self.Y) = self._load_data(filename, sep)
 
     def reset(self):
@@ -27,12 +28,17 @@ class DataSet:
 
     def get_next_batch(self):
         if self.batch_idx < self.X.shape[0]:
-            with open(self.X[self.batch_idx], 'rb') as input:
-                speechsample = pickle.load(input)
-                seq_len = [speechsample.mfcc.shape[1]]
-                clean_transcription = self.Y[self.batch_idx]
-                self.batch_idx += 1
-                return speechsample.mfcc, speechsample.target, seq_len, clean_transcription
+            filename = self.X[self.batch_idx]
+            if not filename in self.cache:
+                with open(filename, 'rb') as input:
+                    speechsample = pickle.load(input)
+                    self.cache[filename] = speechsample
+            else:
+                speechsample = self.cache[filename]
+            seq_len = [speechsample.mfcc.shape[1]]
+            clean_transcription = self.Y[self.batch_idx]
+            self.batch_idx += 1
+            return speechsample.mfcc, speechsample.target, seq_len, clean_transcription
         return None
 
     def has_more_batches(self):
