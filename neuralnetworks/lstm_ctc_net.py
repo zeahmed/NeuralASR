@@ -1,12 +1,14 @@
 import tensorflow as tf
 
+
 def create_model(dataset, features, labels, seq_len, is_training):
 
-    num_hidden=100
-    num_layers=3
+    num_hidden = 100
+    num_layers = 3
     num_classes = ord('z') - ord('a') + 1 + 1 + 1
 
-    cells = [ tf.contrib.rnn.LSTMCell(num_hidden, state_is_tuple=True) for i in range(num_layers)]
+    cells = [tf.contrib.rnn.LSTMCell(num_hidden, state_is_tuple=True)
+             for i in range(num_layers)]
     stack = tf.contrib.rnn.MultiRNNCell(cells,
                                         state_is_tuple=True)
 
@@ -32,6 +34,12 @@ def create_model(dataset, features, labels, seq_len, is_training):
     # Time major
     logits = tf.transpose(logits, (1, 0, 2))
     loss = tf.reduce_mean(tf.nn.ctc_loss(labels, logits, seq_len))
-    
-    model, log_prob = tf.nn.ctc_beam_search_decoder(logits, seq_len) #tf.nn.ctc_greedy_decoder(logits, seq_len)
-    return model[0], loss
+
+    model, log_prob = tf.nn.ctc_beam_search_decoder(
+        logits, seq_len)  # tf.nn.ctc_greedy_decoder(logits, seq_len)
+
+    # Label Error Rate
+    ler = tf.edit_distance(tf.cast(model[0], tf.int32), labels)
+    mean_ler = tf.reduce_mean(ler)
+
+    return model[0], loss, ler

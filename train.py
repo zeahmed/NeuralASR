@@ -23,7 +23,7 @@ def train_model(dataTrain, model_dir, learning_rate):
     X, T, Y = dataTrain.get_batch_op()
     is_training = tf.placeholder(tf.bool)
 
-    model, loss = bilstm_model(dataTrain, X, Y, T, is_training)
+    model, loss, mean_ler = bilstm_model(dataTrain, X, Y, T, is_training)
     adam_opt = tf.train.AdamOptimizer(learning_rate=learning_rate)  # .minimize(loss)
     gradients, variables = zip(*adam_opt.compute_gradients(loss))
     gradients, _ = tf.clip_by_global_norm(gradients, 5.0)
@@ -37,25 +37,27 @@ def train_model(dataTrain, model_dir, learning_rate):
     global_step = 0
     load_model(global_step, sess, saver, model_dir)
 
-    train_time_sec = 0
-    avg_loss = 0
-    report_step = 80 // dataTrain.batch_size
+    metrics = {'train_time_sec': 0, 'avg_loss': 0, 'avg_ler': 0}
+    report_step = dataTrain.get_num_of_sample() // dataTrain.batch_size
     while True:
         global_step += 1
         try:
             t0 = time.time()
-            _, loss_val = sess.run([optimizer, loss], feed_dict={is_training: True})
-            train_time_sec = train_time_sec + (time.time() - t0)
-            avg_loss += loss_val
+            _, loss_val, mean_ler_value = sess.run(
+                [optimizer, loss, mean_ler], feed_dict={is_training: True})
+            metrics['train_time_sec'] = metrics['train_time_sec'] + (time.time() - t0)
+            metrics['avg_loss'] += loss_val
+            metrics['avg_ler'] += mean_ler_value
         except tf.errors.OutOfRangeError:
             print("Done Training...")
             break
 
         if global_step % report_step == 0:
             saver.save(sess, os.path.join(model_dir, 'model'), global_step=global_step)
-            print('Step: ', '%04d' % (global_step), 'cost = %.4f' %
-                  (avg_loss / report_step))
-            avg_loss = 0
+            print('Step: ', '%04d' % (global_step), ', cost = %.4f' %
+                  (metrics['avg_loss'] / report_step), ', LER = %.4f' % (metrics['avg_ler'] / report_step))
+            metrics['avg_loss'] = 0
+            metrics['avg_ler'] = 0
             #feed_dict = {is_training: False}
             #str_decoded = decode_batch(sess, model, feed_dict)
             #print('Decoded: ', str_decoded)

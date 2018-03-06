@@ -47,6 +47,9 @@ class DataSet:
     def get_label_shape(self):
         return [self.batch_size, None, 1]
 
+    def get_num_of_sample(self):
+        return self.X.shape[0]
+
     def _load_data(self, fileName, sep):
         data = pd.read_csv(fileName, header=None, sep=sep)
         train_X = data.ix[:, 0].values.ravel()
