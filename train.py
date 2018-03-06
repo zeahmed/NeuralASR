@@ -20,10 +20,15 @@ def train_model(dataTrain, model_dir, learning_rate, datavalid):
 
     tf.set_random_seed(1)
     is_training = tf.placeholder(tf.bool)
-    X, T, Y = tf.cond(is_training, lambda: dataTrain.get_batch_op(),
-                      lambda: datavalid.get_batch_op())
+
+    if datavalid:
+        X, T, Y = tf.cond(is_training, lambda: dataTrain.get_batch_op(),
+                          lambda: datavalid.get_batch_op())
+    else:
+        X, T, Y = dataTrain.get_batch_op()
+
     model, loss, mean_ler = bilstm_model(dataTrain, X, Y, T, is_training)
-    
+
     adam_opt = tf.train.AdamOptimizer(learning_rate=learning_rate)  # .minimize(loss)
     gradients, variables = zip(*adam_opt.compute_gradients(loss))
     gradients, _ = tf.clip_by_global_norm(gradients, 5.0)
