@@ -10,20 +10,20 @@ import tensorflow as tf
 
 from common import load_model
 from audio_dataset import DataSet
-#from decode import decode_batch
 from neuralnetworks import bilstm_model
 from preprocess import SpeechSample
 
 
-def train_model(dataTrain, model_dir, learning_rate):
+def train_model(dataTrain, model_dir, learning_rate, datavalid):
     print('Batch Dimensions: ', dataTrain.get_feature_shape())
     print('Label Dimensions: ', dataTrain.get_label_shape())
 
     tf.set_random_seed(1)
-    X, T, Y = dataTrain.get_batch_op()
     is_training = tf.placeholder(tf.bool)
-
+    X, T, Y = tf.cond(is_training, lambda: dataTrain.get_batch_op(),
+                      lambda: datavalid.get_batch_op())
     model, loss, mean_ler = bilstm_model(dataTrain, X, Y, T, is_training)
+    
     adam_opt = tf.train.AdamOptimizer(learning_rate=learning_rate)  # .minimize(loss)
     gradients, variables = zip(*adam_opt.compute_gradients(loss))
     gradients, _ = tf.clip_by_global_norm(gradients, 5.0)
@@ -58,6 +58,11 @@ def train_model(dataTrain, model_dir, learning_rate):
                   (metrics['avg_loss'] / report_step), ', LER = %.4f' % (metrics['avg_ler'] / report_step))
             metrics['avg_loss'] = 0
             metrics['avg_ler'] = 0
+            if datavalid:
+                valid_loss_val,  valid_mean_ler_value = sess.run(
+                    [loss, mean_ler], feed_dict={is_training: False})
+                print('Valid: cost = %.4f' % (valid_loss_val),
+                      ', LER = %.4f' % (valid_mean_ler_value))
             #feed_dict = {is_training: False}
             #str_decoded = decode_batch(sess, model, feed_dict)
             #print('Decoded: ', str_decoded)
@@ -79,7 +84,12 @@ if __name__ == '__main__':
                         help="Batch size for model training.")
     parser.add_argument("-lr", "--learning_rate", required=False, default=0.001, type=float,
                         help="Learning rate for optimizer.")
+    parser.add_argument("-v", "--valid_input", required=False,
+                        help="List of pickle files containing mfcc from validation set.")
     args = parser.parse_args()
 
     dataTrain = DataSet(args.input, batch_size=args.batch_size, epochs=args.epochs)
-    train_model(dataTrain, args.model_dir, args.learning_rate)
+    dataValid = None
+    if args.valid_input:
+        dataValid = DataSet(args.valid_input, batch_size=1, epochs=None)
+    train_model(dataTrain, args.model_dir, args.learning_rate, dataValid)

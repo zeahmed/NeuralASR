@@ -6,19 +6,8 @@ import pickle
 import numpy as np
 import pandas as pd
 
-from .utils import convert_inputs_to_ctc_format
-
-
-class SpeechSample(object):
-    '''
-    A class to hold training instances in (X,Y).
-    X is mfcc and Y are sequence label in CTC format for tensorflow
-    '''
-
-    def __init__(self, id, mfcc, seq_len):
-        self.id = id
-        self.mfcc = mfcc
-        self.seq_len = seq_len
+from utils import convert_inputs_to_ctc_format
+from speechsample import SpeechSample
 
 
 def write_data(data, samplerate, numcep, output_dir, scp_file_name):
