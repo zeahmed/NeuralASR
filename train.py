@@ -39,6 +39,7 @@ def train_model(dataTrain, model_dir):
 
     train_time_sec = 0
     avg_loss = 0
+    report_step = 80 // dataTrain.batch_size
     while True:
         global_step += 1
         try:
@@ -50,10 +51,10 @@ def train_model(dataTrain, model_dir):
             print("Done Training...")
             break
 
-        if global_step % 10 == 0:
+        if global_step % report_step == 0:
             saver.save(sess, os.path.join(model_dir, 'model'), global_step=global_step)
             print('Step: ', '%04d' % (global_step), 'cost = %.4f' %
-                  (avg_loss / 10))
+                  (avg_loss / report_step))
             avg_loss = 0
             #feed_dict = {is_training: False}
             #str_decoded = decode_batch(sess, model, feed_dict)
@@ -70,7 +71,11 @@ if __name__ == '__main__':
                         help="List of pickle files containing mfcc")
     parser.add_argument("-m", "--model_dir", required=False, default='.model',
                         help="Directory to save model files.")
+    parser.add_argument("-e", "--epochs", required=False, default=50, type=int,
+                        help="number of training iterations.")
+    parser.add_argument("-b", "--batch_size", required=False, default=20, type=int,
+                        help="Batch size for model training.")
     args = parser.parse_args()
 
-    dataTrain = DataSet(args.input, batch_size=5,epochs=50)
+    dataTrain = DataSet(args.input, batch_size=args.batch_size,epochs=args.epochs)
     train_model(dataTrain, args.model_dir)
