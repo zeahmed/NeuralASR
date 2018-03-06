@@ -3,11 +3,11 @@ import tensorflow as tf
 def create_model(dataset, features, labels, seq_len, is_training):
 
     num_hidden=100
-    num_layers=1
+    num_layers=3
     num_classes = ord('z') - ord('a') + 1 + 1 + 1
 
-    cell = tf.contrib.rnn.LSTMCell(num_hidden, state_is_tuple=True)
-    stack = tf.contrib.rnn.MultiRNNCell([cell] * num_layers,
+    cells = [ tf.contrib.rnn.LSTMCell(num_hidden, state_is_tuple=True) for i in range(num_layers)]
+    stack = tf.contrib.rnn.MultiRNNCell(cells,
                                         state_is_tuple=True)
 
     outputs, _ = tf.nn.dynamic_rnn(stack, features, seq_len, dtype=tf.float32)

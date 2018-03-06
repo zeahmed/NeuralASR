@@ -20,21 +20,21 @@ def train_model(dataTrain, model_dir):
     print('Label Dimensions: ', dataTrain.get_label_shape())
 
     tf.set_random_seed(1)
-    X, T, Y = dataTrain.get_batch_op() #tf.placeholder(tf.float32, dataTrain.get_feature_shape())
-    #Y = tf.sparse_placeholder(tf.int32)
-    #T = tf.tile(tf.shape(X)[1], tf.shape(X)[0]) #tf.placeholder(tf.int32, [None])
+    X, T, Y = dataTrain.get_batch_op()
     is_training = tf.placeholder(tf.bool)
 
     model, loss = bilstm_model(dataTrain, X, Y, T, is_training)
-    optimizer = tf.train.MomentumOptimizer(
-        learning_rate=0.005, momentum=0.9).minimize(loss)
+    adam_opt = tf.train.AdamOptimizer(learning_rate=0.01)#.minimize(loss)
+    gradients, variables = zip(*adam_opt.compute_gradients(loss))
+    gradients, _ = tf.clip_by_global_norm(gradients, 5.0)
+    optimizer = adam_opt.apply_gradients(zip(gradients, variables))
 
     init = tf.global_variables_initializer()
     saver = tf.train.Saver()
     sess = tf.Session()
     sess.run(init)
 
-    global_step=0
+    global_step = 0
     load_model(global_step, sess, saver, model_dir)
 
     train_time_sec = 0
@@ -53,9 +53,9 @@ def train_model(dataTrain, model_dir):
         if global_step % 10 == 0:
             saver.save(sess, os.path.join(model_dir, 'model'), global_step=global_step)
             print('Step: ', '%04d' % (global_step), 'cost = %.4f' %
-                (avg_loss / global_step))
-            #X_batch, Y_batch, seq_len, original = dataTrain.peek_batch()
-            #feed_dict = {X: X_batch, T: seq_len, is_training: False}
+                  (avg_loss / 10))
+            avg_loss = 0
+            #feed_dict = {is_training: False}
             #str_decoded = decode_batch(sess, model, feed_dict)
             #print('Decoded: ', str_decoded)
             #print('Original: ', original)
@@ -72,5 +72,5 @@ if __name__ == '__main__':
                         help="Directory to save model files.")
     args = parser.parse_args()
 
-    dataTrain = DataSet(args.input, epochs=5)
+    dataTrain = DataSet(args.input, batch_size=5,epochs=50)
     train_model(dataTrain, args.model_dir)

@@ -2,15 +2,29 @@ import tensorflow as tf
 
 def create_model(dataset, features, labels, seq_len, is_training):
 
-    num_hidden=100
+    num_hidden=500
     num_layers=1
     num_classes = ord('z') - ord('a') + 1 + 1 + 1
 
-    cell = tf.contrib.rnn.LSTMCell(num_hidden, state_is_tuple=True)
-    stack = tf.contrib.rnn.MultiRNNCell([cell] * num_layers,
-                                        state_is_tuple=True)
+    # Forward direction cell:
+    lstm_fw_cell = tf.contrib.rnn.BasicLSTMCell(num_hidden, forget_bias=1.0, state_is_tuple=True, reuse=tf.get_variable_scope().reuse)
+    # lstm_fw_cell = tf.contrib.rnn.DropoutWrapper(lstm_fw_cell,
+    #                                             input_keep_prob=1.0 - dropout[3],
+    #                                             output_keep_prob=1.0 - dropout[3],
+    #                                             seed=FLAGS.random_seed)
+    # Backward direction cell:
+    lstm_bw_cell = tf.contrib.rnn.BasicLSTMCell(num_hidden, forget_bias=1.0, state_is_tuple=True, reuse=tf.get_variable_scope().reuse)
+    # lstm_bw_cell = tf.contrib.rnn.DropoutWrapper(lstm_bw_cell,
+    #                                             input_keep_prob=1.0 - dropout[4],
+    #                                             output_keep_prob=1.0 - dropout[4],
+    #                                             seed=FLAGS.random_seed)
 
-    outputs, _ = tf.nn.dynamic_rnn(stack, features, seq_len, dtype=tf.float32)
+    # Now we feed `layer_3` into the LSTM BRNN cell and obtain the LSTM BRNN output.
+    outputs, _ = tf.nn.bidirectional_dynamic_rnn(cell_fw=lstm_fw_cell,
+                                                             cell_bw=lstm_bw_cell,
+                                                             inputs=features,
+                                                             dtype=tf.float32,
+                                                             sequence_length=seq_len)
 
     shape = tf.shape(features)
     batch_s, max_time_steps = shape[0], shape[1]
