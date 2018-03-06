@@ -78,9 +78,13 @@ if __name__ == '__main__':
         description="Read data from featurized mfcc files.")
     parser.add_argument("-i", "--input", required=True,
                         help="List of pickle files containing mfcc")
+    parser.add_argument("-e", "--epochs", required=False, default=50, type=int,
+                        help="number of training iterations.")
+    parser.add_argument("-b", "--batch_size", required=False, default=20, type=int,
+                        help="Batch size for model training.")
     args = parser.parse_args()
 
-    data = DataSet(args.input)
+    data = DataSet(args.input, batch_size=args.batch_size, epochs=args.epochs)
     next_batch = data.get_batch_op()
     result = tf.add(next_batch[0], next_batch[0])
     with tf.Session() as session:

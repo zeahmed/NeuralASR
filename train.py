@@ -15,7 +15,7 @@ from neuralnetworks import bilstm_model
 from preprocess import SpeechSample
 
 
-def train_model(dataTrain, model_dir):
+def train_model(dataTrain, model_dir, learning_rate):
     print('Batch Dimensions: ', dataTrain.get_feature_shape())
     print('Label Dimensions: ', dataTrain.get_label_shape())
 
@@ -24,7 +24,7 @@ def train_model(dataTrain, model_dir):
     is_training = tf.placeholder(tf.bool)
 
     model, loss = bilstm_model(dataTrain, X, Y, T, is_training)
-    adam_opt = tf.train.AdamOptimizer(learning_rate=0.01)#.minimize(loss)
+    adam_opt = tf.train.AdamOptimizer(learning_rate=learning_rate)  # .minimize(loss)
     gradients, variables = zip(*adam_opt.compute_gradients(loss))
     gradients, _ = tf.clip_by_global_norm(gradients, 5.0)
     optimizer = adam_opt.apply_gradients(zip(gradients, variables))
@@ -75,7 +75,9 @@ if __name__ == '__main__':
                         help="number of training iterations.")
     parser.add_argument("-b", "--batch_size", required=False, default=20, type=int,
                         help="Batch size for model training.")
+    parser.add_argument("-lr", "--learning_rate", required=False, default=0.001, type=float,
+                        help="Learning rate for optimizer.")
     args = parser.parse_args()
 
-    dataTrain = DataSet(args.input, batch_size=args.batch_size,epochs=args.epochs)
-    train_model(dataTrain, args.model_dir)
+    dataTrain = DataSet(args.input, batch_size=args.batch_size, epochs=args.epochs)
+    train_model(dataTrain, args.model_dir, args.learning_rate)
