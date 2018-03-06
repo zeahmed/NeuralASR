@@ -15,10 +15,10 @@ class SpeechSample(object):
     X is mfcc and Y are sequence label in CTC format for tensorflow
     '''
 
-    def __init__(self, id, mfcc, target):
+    def __init__(self, id, mfcc, seq_len):
         self.id = id
         self.mfcc = mfcc
-        self.target = target
+        self.seq_len = seq_len
 
 
 def write_data(data, samplerate, numcep, output_dir, scp_file_name):
@@ -29,7 +29,7 @@ def write_data(data, samplerate, numcep, output_dir, scp_file_name):
         for i in range(len(train_X)):
             print(train_X[i])
             if os.path.exists(train_X[i]) and os.path.exists(train_Y[i]):
-                mfcc, target, seq_len, clean_transcription = convert_inputs_to_ctc_format(
+                mfcc, seq_len, clean_transcription = convert_inputs_to_ctc_format(
                     train_X[i], samplerate, numcep, train_Y[i])
                 filename = os.path.basename(train_X[i]).replace(".wav", "")
                 filepath = os.path.join(output_dir, filename + ".pkl")
@@ -37,7 +37,7 @@ def write_data(data, samplerate, numcep, output_dir, scp_file_name):
                 with open(filepath, 'wb') as output:
                     speechsample = SpeechSample(filename,
                                                 mfcc,
-                                                target)
+                                                seq_len)
                     pickle.dump(speechsample, output, pickle.HIGHEST_PROTOCOL)
 
 

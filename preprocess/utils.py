@@ -8,7 +8,7 @@ START_INDEX = ord('a') - 1  # 0 is reserved for space
 def convert_to_mfcc(wavfile, sr, numcep):
     audio, _ = librosa.load(wavfile, mono=True, sr=sr)
     audio_mfcc = mfcc(audio, samplerate=sr, numcep=numcep)
-    audio_mfcc = np.expand_dims(audio_mfcc, axis=0)
+    #audio_mfcc = np.expand_dims(audio_mfcc, axis=0)
     audio_mfcc = (audio_mfcc - np.mean(audio_mfcc)) / np.std(audio_mfcc)
     return audio_mfcc
 
@@ -19,15 +19,15 @@ def get_labels(txtfile):
     transcription = transcription.strip().lower()
     clean_transcription = re.sub('[^a-z0-9\s]', '', transcription)
     clean_transcription = clean_transcription.replace('  ', ' ')
-    targets = np.asarray([0 if x == ' ' else ord(x) - START_INDEX for x in clean_transcription])
-    targets = sparse_tuple_from([targets])
-    return targets, clean_transcription
+    #targets = np.asarray([0 if x == ' ' else ord(x) - START_INDEX for x in clean_transcription])
+    #targets = sparse_tuple_from([targets])
+    return clean_transcription
 
 def convert_inputs_to_ctc_format(wavfile, sr, numcep, txtfile):
     audio_mfcc = convert_to_mfcc(wavfile, sr, numcep)
-    seq_len = [audio_mfcc.shape[1]]
-    targets, clean_transcription = get_labels(txtfile)
-    return audio_mfcc, targets, seq_len, clean_transcription
+    seq_len = np.asarray(audio_mfcc.shape[0], dtype=np.int32)
+    clean_transcription = get_labels(txtfile)
+    return audio_mfcc.astype(np.float32), seq_len, clean_transcription
 
 
 def sparse_tuple_from(sequences, dtype=np.int32):
@@ -37,6 +37,9 @@ def sparse_tuple_from(sequences, dtype=np.int32):
     Returns:
         A tuple with (indices, values, shape)
     """
+    for i, text in enumerate(sequences):
+        sequences[i] = np.asarray([0 if x == ' ' else ord(x) - START_INDEX for x in text])
+        
     indices = []
     values = []
 
