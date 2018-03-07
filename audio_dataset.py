@@ -1,7 +1,7 @@
-import os
-import sys
 import argparse
+import os
 import pickle
+import sys
 
 import numpy as np
 import pandas as pd
@@ -11,8 +11,9 @@ from preprocess import SpeechSample
 
 
 class DataSet:
+    START_INDEX = ord('a') - 1
+
     def __init__(self, filename, batch_size=1, epochs=50, sep=","):
-        self.START_INDEX = ord('a') - 1
         self.MFCC_SIZE = 13
         self.filename = filename
         self.batch_size = batch_size
@@ -33,13 +34,13 @@ class DataSet:
         dataset = dataset.padded_batch(self.batch_size, padded_shapes=(
             [None, self.MFCC_SIZE], [], []))
         iterator = dataset.make_one_shot_iterator()
-        batch_features, seq_len, batch_transcript = iterator.get_next()
+        batch_features, seq_len, original_transcript = iterator.get_next()
 
-        indices, values, dense_shape = tf.py_func(self.sparse_tuple_from, [batch_transcript], [
+        indices, values, dense_shape = tf.py_func(self.sparse_tuple_from, [original_transcript], [
                                                   tf.int64, tf.int32, tf.int64])
         batch_transcript = tf.SparseTensor(
             indices=indices, values=values, dense_shape=dense_shape)
-        return batch_features, seq_len, batch_transcript
+        return batch_features, seq_len, batch_transcript, original_transcript
 
     def get_feature_shape(self):
         return [self.batch_size, None, self.MFCC_SIZE]
@@ -59,7 +60,7 @@ class DataSet:
     def sparse_tuple_from(self, sequences):
         for i, text in enumerate(sequences):
             sequences[i] = np.asarray(
-                [0 if x == 32 else x - self.START_INDEX for x in text])
+                [0 if x == 32 else x - DataSet.START_INDEX for x in text])
 
         indices = []
         values = []

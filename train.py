@@ -1,6 +1,6 @@
+import argparse
 import os
 import sys
-import argparse
 import time
 from datetime import datetime
 
@@ -8,8 +8,8 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-from common import load_model
 from audio_dataset import DataSet
+from common import load_model
 from neuralnetworks import bilstm_model
 from preprocess import SpeechSample
 
@@ -22,12 +22,12 @@ def train_model(dataTrain, model_dir, learning_rate, datavalid):
     is_training = tf.placeholder(tf.bool)
 
     if datavalid:
-        X, T, Y = tf.cond(is_training, lambda: dataTrain.get_batch_op(),
-                          lambda: datavalid.get_batch_op())
+        X, T, Y, _ = tf.cond(is_training, lambda: dataTrain.get_batch_op(),
+                             lambda: datavalid.get_batch_op())
     else:
-        X, T, Y = dataTrain.get_batch_op()
+        X, T, Y, _ = dataTrain.get_batch_op()
 
-    model, loss, mean_ler = bilstm_model(dataTrain, X, Y, T, is_training)
+    model, loss, mean_ler = bilstm_model(X, Y, T, is_training)
 
     adam_opt = tf.train.AdamOptimizer(learning_rate=learning_rate)  # .minimize(loss)
     gradients, variables = zip(*adam_opt.compute_gradients(loss))
@@ -60,14 +60,14 @@ def train_model(dataTrain, model_dir, learning_rate, datavalid):
         if global_step % report_step == 0:
             saver.save(sess, os.path.join(model_dir, 'model'), global_step=global_step)
             print('Step: ', '%04d' % (global_step), ', cost = %.4f' %
-                  (metrics['avg_loss'] / report_step), ', LER = %.4f' % (metrics['avg_ler'] / report_step))
+                  (metrics['avg_loss'] / report_step), ', ler = %.4f' % (metrics['avg_ler'] / report_step))
             metrics['avg_loss'] = 0
             metrics['avg_ler'] = 0
             if datavalid:
                 valid_loss_val,  valid_mean_ler_value = sess.run(
                     [loss, mean_ler], feed_dict={is_training: False})
                 print('Valid: cost = %.4f' % (valid_loss_val),
-                      ', LER = %.4f' % (valid_mean_ler_value))
+                      ', ler = %.4f' % (valid_mean_ler_value))
             #feed_dict = {is_training: False}
             #str_decoded = decode_batch(sess, model, feed_dict)
             #print('Decoded: ', str_decoded)

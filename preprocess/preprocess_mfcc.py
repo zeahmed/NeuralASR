@@ -1,12 +1,12 @@
-import os
-import sys
 import argparse
+import os
 import pickle
+import sys
 
 import numpy as np
 import pandas as pd
-
 from utils import convert_inputs_to_ctc_format
+
 from speechsample import SpeechSample
 
 

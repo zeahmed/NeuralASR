@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-def create_model(dataset, features, labels, seq_len, is_training):
+def create_model(features, labels, seq_len, is_training):
 
     num_hidden = 100
     num_layers = 3

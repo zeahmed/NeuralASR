@@ -1,2 +1,2 @@
-from .speechsample import SpeechSample
 from . import utils
+from .speechsample import SpeechSample
