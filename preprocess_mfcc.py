@@ -23,7 +23,7 @@ def write_data(data, samplerate, numcontext, numcep, output_dir, scp_file_name):
                     train_X[i], samplerate, numcontext, numcep, train_Y[i])
                 filename = os.path.basename(train_X[i]).replace(".wav", "")
                 filepath = os.path.join(output_dir, filename + ".pkl")
-                f.write(filepath + "\n")
+                f.write(filename + ".pkl\n")
                 with open(filepath, 'wb') as output:
                     audio = AudioSample(filename,
                                                 mfcc,

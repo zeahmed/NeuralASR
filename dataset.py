@@ -21,7 +21,7 @@ class DataSet:
         self.epochs = epochs
         with open(self.filename, 'r') as f:
             self.X = f.readlines()
-            self.X = [x.strip() for x in self.X]
+            self.X = [ os.path.join(os.path.dirname(self.filename), x.strip()) for x in self.X]
 
     def load_pkl(self, pklfilename):
         with open(pklfilename, 'rb') as input:
