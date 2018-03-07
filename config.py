@@ -24,11 +24,13 @@ class Config(object):
         parameters = self.cfg['Train']
         if 'input' in parameters:
             self.train_input = parameters['input']
-            self.mfcc_output = os.path.dirname(self.train_input)
 
         parameters = self.cfg['MFCC Featurizer']
         if 'input' in parameters:
             self.mfcc_input = parameters['input']
+        if 'output' in parameters:
+            self.mfcc_output = parameters['output']
+            
 
         parameters = self.cfg['Test']
         if 'input' in parameters:
