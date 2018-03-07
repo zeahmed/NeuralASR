@@ -7,7 +7,7 @@ import tensorflow as tf
 from common import convert_2_str, load_model
 from config import Config
 from neuralnetworks import bilstm_model
-from preprocess.utils import convert_inputs_to_ctc_format
+from utils import convert_inputs_to_ctc_format
 
 
 def decode(model_dir, mfcc, seq_len):

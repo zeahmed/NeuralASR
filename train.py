@@ -8,11 +8,10 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-from audio_dataset import DataSet
+from dataset import DataSet
 from common import load_model
 from config import Config
-from neuralnetworks import bilstm_model
-from preprocess import SpeechSample
+from networks import bilstm_model
 
 
 def train_model(dataTrain, model_dir, learning_rate, datavalid):
@@ -84,10 +83,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     config = Config(args.config)
-    dataTrain = DataSet(config.train_input,
+    dataTrain = DataSet(config.train_input, config.feature_size,
                         batch_size=config.batch_size, epochs=config.epochs)
     dataValid = None
     if config.test_input:
-        dataValid = DataSet(config.test_input, batch_size=1, epochs=None)
+        dataValid = DataSet(config.test_input, config.feature_size,
+                            batch_size=1, epochs=None)
     train_model(dataTrain, config.model_dir, config.learningrate, dataValid)
     config.write(os.path.join(config.model_dir, os.path.basename(args.config)))

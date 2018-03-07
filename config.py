@@ -1,5 +1,5 @@
-
 import argparse
+import os
 from configparser import ConfigParser
 
 
@@ -10,25 +10,44 @@ class Config(object):
         parameters = self.cfg['Parameters']
         self.samplerate = int(parameters['samplerate'])
         self.numcep = int(parameters['numcep'])
+        self.numcontext = int(parameters['numcontext']) if 'numcontext' in parameters else 0
+        self.feature_size = (2 * self.numcontext + 1) * self.numcep
         self.batch_size = int(parameters['batch_size'])
         self.epochs = int(parameters['epochs'])
         self.learningrate = float(parameters['learningrate'])
         self.model_dir = parameters['model_dir']
-        self.test_input = self.train_input = None
-        if not isTest:
-            self.train_input = parameters['train_input']
-        if 'test_input' in parameters:
-            self.test_input = parameters['test_input']
+        self.train_input = None
+        self.test_input = None
+        self.mfcc_input = None
+        self.mfcc_output = None
+
+        parameters = self.cfg['Train']
+        if 'input' in parameters:
+            self.train_input = parameters['input']
+            self.mfcc_output = os.path.dirname(self.train_input)
+
+        parameters = self.cfg['MFCC Featurizer']
+        if 'input' in parameters:
+            self.mfcc_input = parameters['input']
+
+        parameters = self.cfg['Test']
+        if 'input' in parameters:
+            self.test_input = parameters['input']
+        else:
+            raise ValueError(
+                "Missing 'test_input' in configuration file: " + configfile)
 
     def print_config(self):
         print('samplerate=', self.samplerate)
         print('numcep=', self.numcep)
+        print('numcontext=', self.numcontext)
         print('batch_size=', self.batch_size)
         print('epochs=', self.epochs)
         print('numclearningrateep=', self.learningrate)
         print('model_dir=', self.model_dir)
         print('train_input=', self.train_input)
         print('test_input=', self.test_input)
+        print('mfcc_input=', self.mfcc_input)
 
     def write(self, filename):
         with open(filename, 'w') as configfile:

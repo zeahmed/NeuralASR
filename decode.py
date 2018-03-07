@@ -8,7 +8,6 @@ from audio_dataset import DataSet
 from common import convert_2_str, load_model
 from config import Config
 from neuralnetworks import bilstm_model
-from preprocess import SpeechSample
 
 
 def decode(dataTest, model_dir):
