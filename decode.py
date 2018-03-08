@@ -1,4 +1,5 @@
 import argparse
+import os
 import time
 
 import numpy as np
@@ -18,7 +19,8 @@ def decode(dataTest, model_dir):
     X, T, Y, O = dataTest.get_batch_op()
     is_training = tf.placeholder(tf.bool)
 
-    model, loss, mean_ler = bilstm_model(X, Y, T, dataTest.symbols.counter, is_training)
+    model, loss, mean_ler = bilstm_model(
+        X, Y, T, dataTest.symbols.counter, is_training)
 
     init = tf.global_variables_initializer()
     saver = tf.train.Saver()
@@ -61,5 +63,8 @@ if __name__ == '__main__':
                         help="Configuration file.")
     args = parser.parse_args()
     config = Config(args.config, True)
-    dataTest = DataSet(config.test_input, config.sym_file, config.feature_size,  batch_size=1, epochs=1)
+    sym_file = os.path.join(
+        config.model_dir, os.path.basename(config.sym_file))
+    dataTest = DataSet(config.test_input, sym_file,
+                       config.feature_size,  batch_size=1, epochs=1)
     decode(dataTest, config.model_dir)

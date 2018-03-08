@@ -90,5 +90,7 @@ if __name__ == '__main__':
     if config.test_input:
         dataValid = DataSet(config.test_input, config.sym_file, config.feature_size,
                             batch_size=1, epochs=None)
-    train_model(dataTrain, config.model_dir, config.learningrate, dataValid)
+
     config.write(os.path.join(config.model_dir, os.path.basename(args.config)))
+    dataTrain.symbols.write(os.path.join(config.model_dir, os.path.basename(config.sym_file)))
+    train_model(dataTrain, config.model_dir, config.learningrate, dataValid)
