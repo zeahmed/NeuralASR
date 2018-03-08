@@ -4,10 +4,10 @@ import time
 import numpy as np
 import tensorflow as tf
 
-from audio_dataset import DataSet
 from common import convert_2_str, load_model
 from config import Config
-from neuralnetworks import bilstm_model
+from dataset import DataSet
+from networks import bilstm_model
 
 
 def decode(dataTest, model_dir):
@@ -43,7 +43,7 @@ def decode(dataTest, model_dir):
                 (time.time() - t0)
             metrics['avg_loss'] += valid_loss_val
             metrics['avg_ler'] += valid_mean_ler_value
-            str_decoded = convert_2_str(output)
+            str_decoded = convert_2_str(output, dataTest.symbols)
             print('Decoded: ', str_decoded)
             print('Original: ', Original_transcript[0].decode('utf-8'))
         except tf.errors.OutOfRangeError:
@@ -61,5 +61,5 @@ if __name__ == '__main__':
                         help="Configuration file.")
     args = parser.parse_args()
     config = Config(args.config, True)
-    dataTest = DataSet(config.test_input, config.sym_file,  batch_size=1, epochs=1)
+    dataTest = DataSet(config.test_input, config.sym_file, config.feature_size,  batch_size=1, epochs=1)
     decode(dataTest, config.model_dir)

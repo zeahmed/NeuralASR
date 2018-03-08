@@ -7,7 +7,7 @@ from utils import compute_mfcc_and_read_transcription
 
 from common import convert_2_str, load_model
 from config import Config
-from neuralnetworks import bilstm_model
+from networks import bilstm_model
 from symbols import Symbols
 
 
@@ -26,7 +26,7 @@ def decode(model_dir, mfcc, sym, seq_len):
     load_model(1, sess, saver, model_dir)
     output = sess.run(model, feed_dict={
                       X: mfcc, T: seq_len, is_training: False})
-    str_decoded = convert_2_str(output)
+    str_decoded = convert_2_str(output, sym)
     print('Decoded: ', str_decoded)
 
 

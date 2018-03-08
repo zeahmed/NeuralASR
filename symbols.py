@@ -10,8 +10,8 @@ class Symbols(object):
         if filename:
             with open(filename, 'r') as f:
                 for line in f:
-                    items = line.split(' ')
-                    self.sym_to_id[items[0]] = items[1]
+                    items = line.strip().split(' ')
+                    self.sym_to_id[items[0]] = int(items[1])
                     if self.counter < int(items[1]):
                         self.counter = int(items[1])
             self.counter += 1
@@ -45,6 +45,7 @@ class Symbols(object):
     def convert_to_str(self, l):
         str_decoded = ''.join([self.get_sym(x) for x in l])
         str_decoded = str_decoded.replace(self.blank, '')
+        str_decoded = str_decoded.replace(self.space, ' ')
         str_decoded = str_decoded.replace('  ', ' ')
         return str_decoded
 
