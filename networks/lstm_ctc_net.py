@@ -42,3 +42,11 @@ def create_model(features, labels, seq_len, num_classes, is_training):
     mean_ler = tf.reduce_mean(ler)
 
     return model[0], loss, ler
+
+def create_optimizer(loss, learning_rate):
+    adam_opt = tf.train.AdamOptimizer(
+        learning_rate=learning_rate)  # .minimize(loss)
+    gradients, variables = zip(*adam_opt.compute_gradients(loss))
+    gradients, _ = tf.clip_by_global_norm(gradients, 5.0)
+    optimizer = adam_opt.apply_gradients(zip(gradients, variables))
+    return optimizer

@@ -2,9 +2,15 @@ import argparse
 import os
 from configparser import ConfigParser
 
+from logger import get_logger
+
+logger = get_logger()
+
 
 class Config(object):
     def __init__(self, configfile, isTest=False):
+        self.configfile = configfile
+        logger.info('Reading configuration from: ' + configfile)
         self.cfg = ConfigParser()
         self.cfg.read(configfile)
         parameters = self.cfg['Parameters']
@@ -60,6 +66,7 @@ class Config(object):
         print('mfcc_output=', self.mfcc_output)
 
     def write(self, filename):
+        logger.info('Writing configuration to: ' + filename)
         with open(filename, 'w') as configfile:
             self.cfg.write(configfile)
 

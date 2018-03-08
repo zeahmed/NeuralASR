@@ -1,3 +1,6 @@
+from logger import get_logger
+
+logger = get_logger()
 
 
 class Symbols(object):
@@ -7,6 +10,7 @@ class Symbols(object):
         self.counter = 1
         self.sym_to_id = {self.space: 0}
         self.id_2_sym = {0: self.space}
+        logger.info('Reading output symbols from: ' + filename)
         if filename:
             with open(filename, 'r') as f:
                 for line in f:
@@ -50,6 +54,7 @@ class Symbols(object):
         return str_decoded
 
     def write(self, filename):
+        logger.info('Writing output symbols to: ' + filename)
         with open(filename, 'w') as f:
             for k, v in sorted(self.sym_to_id.items()):
                 f.write(k + " " + str(v) + "\n")

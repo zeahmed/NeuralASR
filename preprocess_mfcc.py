@@ -9,8 +9,10 @@ from utils import compute_mfcc_and_read_transcription
 
 from audiosample import AudioSample
 from config import Config
+from logger import get_logger
 from symbols import Symbols
 
+logger = get_logger()
 
 def update_symbols(sym, clean_transcription):
     for c in clean_transcription:
@@ -25,9 +27,11 @@ def write_data(data, config, scp_file_name):
     train_X = data.ix[:, 0].values.ravel()
     train_Y = data.ix[:, 1].values.ravel()
     sym = Symbols()
+    logger.info('Writing List of MFCC files to: ' + filename)
+    logger.info('Writing MFCC to: ' + config.mfcc_output)
     with open(scp_file_name, 'w') as f:
         for i in range(len(train_X)):
-            print(train_X[i])
+            logger.info(train_X[i])
             if os.path.exists(train_X[i]) and os.path.exists(train_Y[i]):
                 mfcc, seq_len, clean_transcription = compute_mfcc_and_read_transcription(
                     train_X[i], config.samplerate, config.numcontext, config.numcep, config.punc_regex, train_Y[i])

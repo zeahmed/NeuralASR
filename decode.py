@@ -8,18 +8,21 @@ import tensorflow as tf
 from common import convert_2_str, load_model
 from config import Config
 from dataset import DataSet
-from networks import bilstm_model
+from logger import get_logger
+from networks.bilstm_ctc_net import create_model
+
+logger = get_logger()
 
 
 def decode(dataTest, model_dir):
-    print('Batch Dimensions: ', dataTest.get_feature_shape())
-    print('Label Dimensions: ', dataTest.get_label_shape())
+    logger.info('Batch Dimensions: ' + str(dataTest.get_feature_shape()))
+    logger.info('Label Dimensions: ' + str(dataTest.get_label_shape()))
 
     tf.set_random_seed(1)
     X, T, Y, O = dataTest.get_batch_op()
     is_training = tf.placeholder(tf.bool)
 
-    model, loss, mean_ler = bilstm_model(
+    model, loss, mean_ler, log_prob = create_model(
         X, Y, T, dataTest.symbols.counter, is_training)
 
     init = tf.global_variables_initializer()
@@ -39,20 +42,20 @@ def decode(dataTest, model_dir):
             t0 = time.time()
             output, valid_loss_val,  valid_mean_ler_value, Original_transcript = sess.run(
                 [model, loss, mean_ler, O], feed_dict={is_training: False})
-            print('Valid: avg_cost = %.4f' % (valid_loss_val),
-                  ', avg_ler = %.4f' % (valid_mean_ler_value))
+            logger.info('Valid: avg_cost = %.4f' % (valid_loss_val) +
+                        ', avg_ler = %.4f' % (valid_mean_ler_value))
             metrics['test_time_sec'] = metrics['test_time_sec'] + \
                 (time.time() - t0)
             metrics['avg_loss'] += valid_loss_val
             metrics['avg_ler'] += valid_mean_ler_value
             str_decoded = convert_2_str(output, dataTest.symbols)
-            print('Decoded: ', str_decoded)
-            print('Original: ', Original_transcript[0].decode('utf-8'))
+            logger.info('Decoded: ' + str_decoded)
+            logger.info('Original: ' + Original_transcript[0].decode('utf-8'))
         except tf.errors.OutOfRangeError:
-            print("Finished Decoding!!!")
+            logger.info("Finished Decoding!!!")
             break
 
-    print('Decoded Time = %.4fs, avg_loss = %.4f, avg_ler = %.4f' % (
+    logger.info('Decoded Time = %.4fs, avg_loss = %.4f, avg_ler = %.4f' % (
         metrics['test_time_sec'], metrics['avg_loss'] / global_step, metrics['avg_ler'] / global_step))
 
 

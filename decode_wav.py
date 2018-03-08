@@ -8,8 +8,11 @@ from utils import compute_mfcc_and_read_transcription
 
 from common import convert_2_str, load_model
 from config import Config
-from networks import bilstm_model
+from logger import get_logger
+from networks.bilstm_ctc_net import create_model
 from symbols import Symbols
+
+logger = get_logger()
 
 
 def decode(model_dir, mfcc, sym, seq_len):
@@ -18,7 +21,7 @@ def decode(model_dir, mfcc, sym, seq_len):
     T = tf.placeholder(tf.int32, [None])
     is_training = tf.placeholder(tf.bool)
 
-    model, loss, mean_ler = bilstm_model(X, Y, T, sym.counter, is_training)
+    model, loss, mean_ler, log_prob = create_model(X, Y, T, sym.counter, is_training)
 
     init = tf.global_variables_initializer()
     saver = tf.train.Saver()
@@ -28,7 +31,7 @@ def decode(model_dir, mfcc, sym, seq_len):
     output = sess.run(model, feed_dict={
                       X: mfcc, T: seq_len, is_training: False})
     str_decoded = convert_2_str(output, sym)
-    print('Decoded: ', str_decoded)
+    logger.info('Decoded: ' + str_decoded)
 
 
 if __name__ == '__main__':
