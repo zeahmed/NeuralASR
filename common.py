@@ -17,10 +17,10 @@ def convert_2_str(output, sym):
 
 def load_model(start_epoch, sess, saver, model_dir):
     if start_epoch > 0:
-        logger.info("Restoring checkpoint: " + model_dir, file=sys.stderr)
+        logger.info("Restoring checkpoint: " + model_dir)
         model_file = tf.train.latest_checkpoint(model_dir)
         saver.restore(sess, model_file)
-        logger.info("Done Restoring checkpoint: " + model_file, file=sys.stderr)
+        logger.info("Done Restoring checkpoint: " + model_file)
     else:
         if os.path.exists(model_dir):
             shutil.rmtree(model_dir)
