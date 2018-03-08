@@ -3,20 +3,21 @@ import time
 
 import numpy as np
 import tensorflow as tf
+from utils import compute_mfcc_and_read_transcription
 
 from common import convert_2_str, load_model
 from config import Config
 from neuralnetworks import bilstm_model
-from utils import convert_inputs_to_ctc_format
+from symbols import Symbols
 
 
-def decode(model_dir, mfcc, seq_len):
+def decode(model_dir, mfcc, sym, seq_len):
     X = tf.placeholder(tf.float32, [1, None, mfcc.shape[2]])
     Y = tf.sparse_placeholder(tf.int32)
     T = tf.placeholder(tf.int32, [None])
     is_training = tf.placeholder(tf.bool)
 
-    model, loss, mean_ler = bilstm_model(X, Y, T, is_training)
+    model, loss, mean_ler = bilstm_model(X, Y, T, sym.counter, is_training)
 
     init = tf.global_variables_initializer()
     saver = tf.train.Saver()
@@ -39,7 +40,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     config = Config(args.config, True)
 
-    mfcc, seq_len = convert_inputs_to_ctc_format(
-        args.input, config.samplerate, config.numcep)
+    sym = Symbols(config.sym_file)
+    mfcc, seq_len = compute_mfcc_and_read_transcription(
+        args.input, config.samplerate, config.numcontext, config.numcep)
     mfcc = np.expand_dims(mfcc, axis=0)
-    decode(config.model_dir, mfcc, [seq_len])
+    decode(config.model_dir, mfcc, sym, [seq_len])

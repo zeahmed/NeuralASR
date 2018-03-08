@@ -5,12 +5,11 @@ import sys
 import numpy as np
 import tensorflow as tf
 
+from symbols import Symbols
 
-def convert_2_str(output):
-    str_decoded = ''.join([chr(x + DataSet.START_INDEX) for x in np.asarray(output[1])])
-    str_decoded = str_decoded.replace(chr(ord('z') + 1), '')
-    str_decoded = str_decoded.replace(chr(ord('a') - 1), ' ')
-    return str_decoded
+
+def convert_2_str(output, sym):
+    return sym.convert_to_str(np.asarray(output[1]))
 
 
 def load_model(start_epoch, sess, saver, model_dir):

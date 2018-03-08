@@ -1,11 +1,10 @@
 import tensorflow as tf
 
 
-def create_model(features, labels, seq_len, is_training):
+def create_model(features, labels, seq_len, num_classes, is_training):
 
     num_hidden = 100
     num_layers = 3
-    num_classes = ord('z') - ord('a') + 1 + 1 + 1
 
     cells = [tf.contrib.rnn.LSTMCell(num_hidden, state_is_tuple=True)
              for i in range(num_layers)]

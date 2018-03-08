@@ -5,31 +5,46 @@ import sys
 
 import numpy as np
 import pandas as pd
-from utils import convert_inputs_to_ctc_format
+from utils import compute_mfcc_and_read_transcription
 
 from audiosample import AudioSample
 from config import Config
+from symbols import Symbols
 
 
-def write_data(data, samplerate, numcontext, numcep, output_dir, scp_file_name):
+def update_symbols(sym, clean_transcription):
+    for c in clean_transcription:
+        if c == ' ':
+            sym.insert_space()
+        else:
+            sym.insert_sym(c)
+
+
+def write_data(data, config, scp_file_name):
     data.sort_values(by=2, inplace=True)
     train_X = data.ix[:, 0].values.ravel()
     train_Y = data.ix[:, 1].values.ravel()
+    sym = Symbols()
     with open(scp_file_name, 'w') as f:
         for i in range(len(train_X)):
             print(train_X[i])
             if os.path.exists(train_X[i]) and os.path.exists(train_Y[i]):
-                mfcc, seq_len, clean_transcription = convert_inputs_to_ctc_format(
-                    train_X[i], samplerate, numcontext, numcep, train_Y[i])
+                mfcc, seq_len, clean_transcription = compute_mfcc_and_read_transcription(
+                    train_X[i], config.samplerate, config.numcontext, config.numcep, config.punc_regex, train_Y[i])
+
+                update_symbols(sym, clean_transcription)
                 filename = os.path.basename(train_X[i]).replace(".wav", "")
-                filepath = os.path.join(output_dir, filename + ".pkl")
+                filepath = os.path.join(config.mfcc_output, filename + ".pkl")
                 f.write(filename + ".pkl\n")
                 with open(filepath, 'wb') as output:
                     audio = AudioSample(filename,
-                                                mfcc,
-                                                seq_len,
-                                                clean_transcription)
+                                        mfcc,
+                                        seq_len,
+                                        clean_transcription)
                     pickle.dump(audio, output, pickle.HIGHEST_PROTOCOL)
+
+    sym.insert_blank()
+    sym.write(os.path.join(config.mfcc_output, config.sym_file))
 
 
 if __name__ == '__main__':
@@ -51,9 +66,7 @@ if __name__ == '__main__':
     np.set_printoptions(suppress=True)
 
     train_scp_file = os.path.join(config.mfcc_output, "train.scp")
-    write_data(dataTrain, config.samplerate, config.numcontext,
-               config.numcep, config.mfcc_output, train_scp_file)
+    write_data(dataTrain, config, train_scp_file)
 
     test_scp_file = os.path.join(config.mfcc_output, "test.scp")
-    write_data(dataTest, config.samplerate, config.numcontext,
-               config.numcep, config.mfcc_output, test_scp_file)
+    write_data(dataTest, config, test_scp_file)

@@ -8,9 +8,9 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-from dataset import DataSet
 from common import load_model
 from config import Config
+from dataset import DataSet
 from networks import bilstm_model
 
 
@@ -27,7 +27,8 @@ def train_model(dataTrain, model_dir, learning_rate, datavalid):
     else:
         X, T, Y, _ = dataTrain.get_batch_op()
 
-    model, loss, mean_ler = bilstm_model(X, Y, T, is_training)
+    model, loss, mean_ler = bilstm_model(
+        X, Y, T, dataTrain.symbols.counter, is_training)
 
     adam_opt = tf.train.AdamOptimizer(
         learning_rate=learning_rate)  # .minimize(loss)
@@ -83,11 +84,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     config = Config(args.config)
-    dataTrain = DataSet(config.train_input, config.feature_size,
+    dataTrain = DataSet(config.train_input, config.sym_file, config.feature_size,
                         batch_size=config.batch_size, epochs=config.epochs)
     dataValid = None
     if config.test_input:
-        dataValid = DataSet(config.test_input, config.feature_size,
+        dataValid = DataSet(config.test_input, config.sym_file, config.feature_size,
                             batch_size=1, epochs=None)
     train_model(dataTrain, config.model_dir, config.learningrate, dataValid)
     config.write(os.path.join(config.model_dir, os.path.basename(args.config)))

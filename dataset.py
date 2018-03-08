@@ -9,19 +9,20 @@ import tensorflow as tf
 
 from audiosample import AudioSample
 from config import Config
+from symbols import Symbols
 
 
 class DataSet:
-    START_INDEX = ord('a') - 1
-
-    def __init__(self, filename, feature_size, batch_size=1, epochs=50):
+    def __init__(self, filename, sym_file, feature_size, batch_size=1, epochs=50):
         self.feature_size = feature_size
         self.filename = filename
         self.batch_size = batch_size
         self.epochs = epochs
+        self.symbols = Symbols(sym_file)
         with open(self.filename, 'r') as f:
             self.X = f.readlines()
-            self.X = [ os.path.join(os.path.dirname(self.filename), x.strip()) for x in self.X]
+            self.X = [os.path.join(os.path.dirname(self.filename), x.strip())
+                      for x in self.X]
 
     def load_pkl(self, pklfilename):
         with open(pklfilename, 'rb') as input:
@@ -55,8 +56,9 @@ class DataSet:
 
     def sparse_tuple_from(self, sequences):
         for i, text in enumerate(sequences):
+            text = text.decode('utf-8')
             sequences[i] = np.asarray(
-                [0 if x == 32 else x - DataSet.START_INDEX for x in text])
+                [self.symbols.get_space_id() if x == ' ' else self.symbols.get_id(x) for x in text])
 
         indices = []
         values = []
@@ -81,8 +83,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     config = Config(args.config)
-    data = DataSet(config.train_input, config.feature_size,
-                   batch_size=config.batch_size, epochs=config.epochs)
+    data = DataSet(config.train_input, config.sym_file, config.feature_size,
+                   batch_size=config.batch_size, epochs=1)
     next_batch = data.get_batch_op()
     result = tf.add(next_batch[0], next_batch[0])
     with tf.Session() as session:
