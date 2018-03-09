@@ -9,7 +9,7 @@ def create_model(features, labels, seq_len, num_classes, is_training):
 
     n_input = features.get_shape().as_list()[2]
     dropout = [0.05, 0.05, 0.05, 0., 0., 0.05]
-    n_hidden = 1024
+    n_hidden = 2048
     n_hidden_1 = n_hidden
     n_hidden_2 = n_hidden
     n_hidden_5 = n_hidden

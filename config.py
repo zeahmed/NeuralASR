@@ -1,6 +1,7 @@
 import argparse
 import os
 from configparser import ConfigParser
+from configparser import ExtendedInterpolation
 
 from logger import get_logger
 
@@ -11,7 +12,7 @@ class Config(object):
     def __init__(self, configfile, isTest=False):
         self.configfile = configfile
         logger.info('Reading configuration from: ' + configfile)
-        self.cfg = ConfigParser()
+        self.cfg = ConfigParser(interpolation=ExtendedInterpolation())
         self.cfg.read(configfile)
         parameters = self.cfg['Parameters']
         self.samplerate = int(parameters['samplerate'])
@@ -23,6 +24,7 @@ class Config(object):
         self.epochs = int(parameters['epochs'])
         self.learningrate = float(parameters['learningrate'])
         self.model_dir = parameters['model_dir']
+        self.report_step = int(parameters['report_step'])
         self.punc_regex = parameters['punc_regex']
         self.train_input = None
         self.test_input = None
@@ -58,6 +60,7 @@ class Config(object):
         print('epochs=', self.epochs)
         print('numclearningrateep=', self.learningrate)
         print('model_dir=', self.model_dir)
+        print('report_step=', self.report_step)
         print('punc_regex=', self.punc_regex)
         print('sym_file=', self.sym_file)
         print('train_input=', self.train_input)

@@ -47,7 +47,7 @@ def train_model(dataTrain, datavalid, config):
         config.model_dir, os.path.basename(config.sym_file)))
 
     metrics = {'train_time_sec': 0, 'avg_loss': 0, 'avg_ler': 0}
-    report_step = dataTrain.get_num_of_sample() // dataTrain.batch_size
+    report_step = config.report_step #dataTrain.get_num_of_sample() // dataTrain.batch_size
     while True:
         global_step += 1
         try:

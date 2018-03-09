@@ -65,8 +65,9 @@ if __name__ == '__main__':
         os.makedirs(config.mfcc_output)
 
     dataTest = pd.read_csv(config.mfcc_input, header=None, sep=',')
-    dataTrain = dataTest.sample(frac=0.8, random_state=200)
-    dataTest = dataTest.drop(dataTrain.index)
+    train_rows = int(dataTest.shape[0] * 0.8)
+    dataTrain = dataTest.ix[:train_rows,:] #dataTest.sample(frac=0.8, random_state=200)
+    dataTest = dataTest.ix[train_rows:,:] #dataTest.drop(dataTrain.index)
 
     np.set_printoptions(suppress=True)
 
