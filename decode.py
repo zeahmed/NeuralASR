@@ -9,7 +9,7 @@ from common import convert_2_str, load_model
 from config import Config
 from dataset import DataSet
 from logger import get_logger
-from networks.bilstm_ctc_net import create_model
+from networks.deepspeech import create_model
 
 logger = get_logger()
 

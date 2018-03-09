@@ -126,14 +126,14 @@ def create_model(features, labels, seq_len, num_classes, is_training):
 
 
 def create_optimizer(loss, learning_rate):
-    # adam_opt = tf.train.AdamOptimizer(
-    #    learning_rate=learning_rate)  # .minimize(loss)
-    #gradients, variables = zip(*adam_opt.compute_gradients(loss))
-    #gradients, _ = tf.clip_by_global_norm(gradients, 5.0)
-    #optimizer = adam_opt.apply_gradients(zip(gradients, variables))
-    mom_opt = tf.train.MomentumOptimizer(
-        learning_rate=learning_rate, momentum=0.9)
-    gradients, variables = zip(*mom_opt.compute_gradients(loss))
+    adam_opt = tf.train.AdamOptimizer(
+       learning_rate=learning_rate)  # .minimize(loss)
+    gradients, variables = zip(*adam_opt.compute_gradients(loss))
     gradients, _ = tf.clip_by_global_norm(gradients, 5.0)
-    optimizer = mom_opt.apply_gradients(zip(gradients, variables))
+    optimizer = adam_opt.apply_gradients(zip(gradients, variables))
+    # mom_opt = tf.train.MomentumOptimizer(
+    #     learning_rate=learning_rate, momentum=0.9)
+    # gradients, variables = zip(*mom_opt.compute_gradients(loss))
+    # gradients, _ = tf.clip_by_global_norm(gradients, 5.0)
+    # optimizer = mom_opt.apply_gradients(zip(gradients, variables))
     return optimizer

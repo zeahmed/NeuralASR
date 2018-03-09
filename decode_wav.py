@@ -9,7 +9,7 @@ from utils import compute_mfcc_and_read_transcription
 from common import convert_2_str, load_model
 from config import Config
 from logger import get_logger
-from networks.bilstm_ctc_net import create_model
+from networks.deepspeech import create_model
 from symbols import Symbols
 
 logger = get_logger()
