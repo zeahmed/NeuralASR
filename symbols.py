@@ -10,8 +10,8 @@ class Symbols(object):
         self.counter = 1
         self.sym_to_id = {self.space: 0}
         self.id_2_sym = {0: self.space}
-        logger.info('Reading output symbols from: ' + filename)
         if filename:
+            logger.info('Reading output symbols from: ' + filename)
             with open(filename, 'r') as f:
                 for line in f:
                     items = line.strip().split(' ')

@@ -27,7 +27,7 @@ def write_data(data, config, scp_file_name):
     train_X = data.ix[:, 0].values.ravel()
     train_Y = data.ix[:, 1].values.ravel()
     sym = Symbols()
-    logger.info('Writing List of MFCC files to: ' + filename)
+    logger.info('Writing List of MFCC files to: ' + scp_file_name)
     logger.info('Writing MFCC to: ' + config.mfcc_output)
     with open(scp_file_name, 'w') as f:
         for i in range(len(train_X)):
@@ -36,16 +36,17 @@ def write_data(data, config, scp_file_name):
                 mfcc, seq_len, clean_transcription = compute_mfcc_and_read_transcription(
                     train_X[i], config.samplerate, config.numcontext, config.numcep, config.punc_regex, train_Y[i])
 
-                update_symbols(sym, clean_transcription)
-                filename = os.path.basename(train_X[i]).replace(".wav", "")
-                filepath = os.path.join(config.mfcc_output, filename + ".pkl")
-                f.write(filename + ".pkl\n")
-                with open(filepath, 'wb') as output:
-                    audio = AudioSample(filename,
-                                        mfcc,
-                                        seq_len,
-                                        clean_transcription)
-                    pickle.dump(audio, output, pickle.HIGHEST_PROTOCOL)
+                if len(clean_transcription) <= mfcc.shape[0]:
+                    update_symbols(sym, clean_transcription)
+                    filename = os.path.basename(train_X[i]).replace(".wav", "")
+                    filepath = os.path.join(config.mfcc_output, filename + ".pkl")
+                    f.write(filename + ".pkl\n")
+                    with open(filepath, 'wb') as output:
+                        audio = AudioSample(filename,
+                                            mfcc,
+                                            seq_len,
+                                            clean_transcription)
+                        pickle.dump(audio, output, pickle.HIGHEST_PROTOCOL)
 
     sym.insert_blank()
     sym.write(os.path.join(config.mfcc_output, config.sym_file))

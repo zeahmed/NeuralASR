@@ -12,7 +12,7 @@ from logger import get_logger
 from common import load_model
 from config import Config
 from dataset import DataSet
-from networks.bilstm_ctc_net import create_model, create_optimizer
+from networks.deepspeech import create_model, create_optimizer
 
 
 logger = get_logger()
