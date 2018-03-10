@@ -8,14 +8,22 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-from logger import get_logger
 from common import load_model
 from config import Config
 from dataset import DataSet
+from logger import get_logger
 from networks.deepspeech import create_model, create_optimizer
 
-
 logger = get_logger()
+
+def write_config(config):
+    model_config = os.path.join(
+        config.model_dir, os.path.basename(config.configfile))
+    if os.path.exists(model_config):
+        logger.warn(
+            'Not overwriting. Config file already exists: ' + model_config)
+    else:
+        config.write(model_config)
 
 def train_model(dataTrain, datavalid, config):
     logger.info('Batch Dimensions: ' + str(dataTrain.get_feature_shape()))
@@ -40,14 +48,15 @@ def train_model(dataTrain, datavalid, config):
     sess = tf.Session()
     sess.run(init)
 
-    global_step = 0
+    global_step = config.start_step
     load_model(global_step, sess, saver, config.model_dir)
-    config.write(os.path.join(config.model_dir, os.path.basename(config.configfile)))
+    write_config(config)
     dataTrain.symbols.write(os.path.join(
         config.model_dir, os.path.basename(config.sym_file)))
 
     metrics = {'train_time_sec': 0, 'avg_loss': 0, 'avg_ler': 0}
-    report_step = config.report_step #dataTrain.get_num_of_sample() // dataTrain.batch_size
+    # dataTrain.get_num_of_sample() // dataTrain.batch_size
+    report_step = config.report_step
     while True:
         global_step += 1
         try:
@@ -66,14 +75,14 @@ def train_model(dataTrain, datavalid, config):
             saver.save(sess, os.path.join(config.model_dir, 'model'),
                        global_step=global_step)
             logger.info('Step: %04d' % (global_step) + ', cost = %.4f' %
-                  (metrics['avg_loss'] / report_step) + ', ler = %.4f' % (metrics['avg_ler'] / report_step))
+                        (metrics['avg_loss'] / report_step) + ', ler = %.4f' % (metrics['avg_ler'] / report_step))
             metrics['avg_loss'] = 0
             metrics['avg_ler'] = 0
             if datavalid:
                 valid_loss_val,  valid_mean_ler_value = sess.run(
                     [loss, mean_ler], feed_dict={is_training: False})
                 logger.info('Valid: cost = %.4f' % (valid_loss_val) +
-                      ', ler = %.4f' % (valid_mean_ler_value))
+                            ', ler = %.4f' % (valid_mean_ler_value))
 
     logger.info("Finished training!!!")
 
@@ -92,5 +101,4 @@ if __name__ == '__main__':
     if config.test_input:
         dataValid = DataSet(config.test_input, config.sym_file, config.feature_size,
                             batch_size=1, epochs=None)
-
     train_model(dataTrain, dataValid, config)

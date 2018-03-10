@@ -24,6 +24,7 @@ class Config(object):
         self.epochs = int(parameters['epochs'])
         self.learningrate = float(parameters['learningrate'])
         self.model_dir = parameters['model_dir']
+        self.start_step = int(parameters['start_step'])
         self.report_step = int(parameters['report_step'])
         self.punc_regex = parameters['punc_regex']
         self.train_input = None
@@ -60,6 +61,7 @@ class Config(object):
         print('epochs=', self.epochs)
         print('numclearningrateep=', self.learningrate)
         print('model_dir=', self.model_dir)
+        print('start_step=', self.start_step)
         print('report_step=', self.report_step)
         print('punc_regex=', self.punc_regex)
         print('sym_file=', self.sym_file)
