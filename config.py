@@ -48,7 +48,7 @@ class Config(object):
         parameters = self.cfg['Test']
         if 'input' in parameters:
             self.test_input = parameters['input']
-        else:
+        elif not self.train_input:
             raise ValueError(
                 "Missing 'test_input' in configuration file: " + configfile)
 
