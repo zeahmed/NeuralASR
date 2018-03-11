@@ -12,9 +12,9 @@ from common import load_model
 from config import Config
 from dataset import DataSet
 from logger import get_logger
-from networks.deepspeech import create_model, create_optimizer
 
 logger = get_logger()
+
 
 def write_config(config):
     model_config = os.path.join(
@@ -25,9 +25,13 @@ def write_config(config):
     else:
         config.write(model_config)
 
+
 def train_model(dataTrain, datavalid, config):
     logger.info('Batch Dimensions: ' + str(dataTrain.get_feature_shape()))
     logger.info('Label Dimensions: ' + str(dataTrain.get_label_shape()))
+
+    network = __import__('networks.' + config.network,
+                         fromlist=('create_model', 'create_optimizer'))
 
     tf.set_random_seed(1)
     is_training = tf.placeholder(tf.bool)
@@ -38,10 +42,10 @@ def train_model(dataTrain, datavalid, config):
     else:
         X, T, Y, _ = dataTrain.get_batch_op()
 
-    model, loss, mean_ler, log_prob = create_model(
+    model, loss, mean_ler, log_prob = network.create_model(
         X, Y, T, dataTrain.symbols.counter, is_training)
 
-    optimizer = create_optimizer(loss, config.learningrate)
+    optimizer = network.create_optimizer(loss, config.learningrate)
 
     init = tf.global_variables_initializer()
     saver = tf.train.Saver()

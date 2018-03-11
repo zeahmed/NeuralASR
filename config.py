@@ -27,6 +27,7 @@ class Config(object):
         self.start_step = int(parameters['start_step'])
         self.report_step = int(parameters['report_step'])
         self.punc_regex = parameters['punc_regex']
+        self.network = parameters['network']
         self.train_input = None
         self.test_input = None
         self.mfcc_input = None
@@ -64,6 +65,7 @@ class Config(object):
         print('start_step=', self.start_step)
         print('report_step=', self.report_step)
         print('punc_regex=', self.punc_regex)
+        print('network=', self.network)
         print('sym_file=', self.sym_file)
         print('train_input=', self.train_input)
         print('test_input=', self.test_input)

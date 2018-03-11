@@ -18,11 +18,14 @@ def decode(dataTest, model_dir):
     logger.info('Batch Dimensions: ' + str(dataTest.get_feature_shape()))
     logger.info('Label Dimensions: ' + str(dataTest.get_label_shape()))
 
+    network = __import__('networks.' + config.network,
+                         fromlist=('create_model'))
+
     tf.set_random_seed(1)
     X, T, Y, O = dataTest.get_batch_op()
     is_training = tf.placeholder(tf.bool)
 
-    model, loss, mean_ler, log_prob = create_model(
+    model, loss, mean_ler, log_prob = network.create_model(
         X, Y, T, dataTest.symbols.counter, is_training)
 
     init = tf.global_variables_initializer()

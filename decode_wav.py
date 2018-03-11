@@ -4,24 +4,26 @@ import time
 
 import numpy as np
 import tensorflow as tf
-from utils import compute_mfcc_and_read_transcription
 
 from common import convert_2_str, load_model
 from config import Config
 from logger import get_logger
-from networks.deepspeech import create_model
 from symbols import Symbols
+from utils import compute_mfcc_and_read_transcription
 
 logger = get_logger()
 
 
 def decode(model_dir, mfcc, sym, seq_len):
+    network = __import__('networks.' + config.network,
+                         fromlist=('create_model'))
     X = tf.placeholder(tf.float32, [1, None, mfcc.shape[2]])
     Y = tf.sparse_placeholder(tf.int32)
     T = tf.placeholder(tf.int32, [None])
     is_training = tf.placeholder(tf.bool)
 
-    model, loss, mean_ler, log_prob = create_model(X, Y, T, sym.counter, is_training)
+    model, loss, mean_ler, log_prob = network.create_model(
+        X, Y, T, sym.counter, is_training)
 
     init = tf.global_variables_initializer()
     saver = tf.train.Saver()
@@ -44,7 +46,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     config = Config(args.config, True)
 
-    sym_file = os.path.join(config.model_dir, os.path.basename(config.sym_file))
+    sym_file = os.path.join(
+        config.model_dir, os.path.basename(config.sym_file))
     sym = Symbols(sym_file)
     mfcc, seq_len = compute_mfcc_and_read_transcription(
         args.input, config.samplerate, config.numcontext, config.numcep)
