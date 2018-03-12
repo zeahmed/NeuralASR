@@ -22,11 +22,10 @@ def update_symbols(sym, clean_transcription):
             sym.insert_sym(c)
 
 
-def write_data(data, config, scp_file_name):
+def write_data(data, config, scp_file_name, sym):
     data.sort_values(by=2, inplace=True)
     train_X = data.ix[:, 0].values.ravel()
     train_Y = data.ix[:, 1].values.ravel()
-    sym = Symbols()
     logger.info('Writing List of MFCC files to: ' + scp_file_name)
     logger.info('Writing MFCC to: ' + config.mfcc_output)
     with open(scp_file_name, 'w') as f:
@@ -64,6 +63,7 @@ if __name__ == '__main__':
     if not os.path.exists(config.mfcc_output):
         os.makedirs(config.mfcc_output)
 
+    sym = Symbols()
     dataTest = pd.read_csv(config.mfcc_input, header=None, sep=',')
     train_rows = int(dataTest.shape[0] * 0.8)
     dataTrain = dataTest.ix[:train_rows,:] #dataTest.sample(frac=0.8, random_state=200)
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     np.set_printoptions(suppress=True)
 
     train_scp_file = os.path.join(config.mfcc_output, "train.scp")
-    write_data(dataTrain, config, train_scp_file)
+    write_data(dataTrain, config, train_scp_file, sym)
 
     test_scp_file = os.path.join(config.mfcc_output, "test.scp")
-    write_data(dataTest, config, test_scp_file)
+    write_data(dataTest, config, test_scp_file, sym)
