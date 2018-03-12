@@ -30,7 +30,7 @@ class DataSet:
         return audiosample.mfcc, audiosample.seq_len, audiosample.transcription
 
     def get_batch_op(self, perform_shuffle=False):
-        dataset = tf.contrib.data.Dataset.from_tensor_slices(self.X)
+        dataset = tf.data.Dataset.from_tensor_slices(self.X)
         dataset = dataset.map(lambda pklfilename: tuple(tf.py_func(
             self.load_pkl, [pklfilename], [tf.float32, tf.int32, tf.string])))
         dataset = dataset.repeat(self.epochs)
