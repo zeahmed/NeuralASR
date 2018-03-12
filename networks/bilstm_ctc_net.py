@@ -11,19 +11,11 @@ def create_network(features, seq_len, num_classes, is_training):
     # Forward direction cell:
     lstm_fw_cell = tf.contrib.rnn.BasicLSTMCell(
         num_hidden, forget_bias=1.0, state_is_tuple=True, reuse=tf.get_variable_scope().reuse)
-    # lstm_fw_cell = tf.contrib.rnn.DropoutWrapper(lstm_fw_cell,
-    #                                             input_keep_prob=1.0 - dropout[3],
-    #                                             output_keep_prob=1.0 - dropout[3],
-    #                                             seed=FLAGS.random_seed)
+
     # Backward direction cell:
     lstm_bw_cell = tf.contrib.rnn.BasicLSTMCell(
         num_hidden, forget_bias=1.0, state_is_tuple=True, reuse=tf.get_variable_scope().reuse)
-    # lstm_bw_cell = tf.contrib.rnn.DropoutWrapper(lstm_bw_cell,
-    #                                             input_keep_prob=1.0 - dropout[4],
-    #                                             output_keep_prob=1.0 - dropout[4],
-    #                                             seed=FLAGS.random_seed)
 
-    # Now we feed `layer_3` into the LSTM BRNN cell and obtain the LSTM BRNN output.
     outputs, _ = tf.nn.bidirectional_dynamic_rnn(cell_fw=lstm_fw_cell,
                                                  cell_bw=lstm_bw_cell,
                                                  inputs=features,
