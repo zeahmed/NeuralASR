@@ -21,7 +21,7 @@ def label_error_rate(model, labels):
 def optimizer(loss, learning_rate):
     adam_opt = tf.train.AdamOptimizer(
         learning_rate=learning_rate)  # .minimize(loss)
-    gradients, variables = zip(*adam_opt.compute_gradients(loss))
+    gradients, variables = zip(*adam_opt.compute_gradients(loss, colocate_gradients_with_ops=True))
     gradients, _ = tf.clip_by_global_norm(gradients, 5.0)
     optimizer = adam_opt.apply_gradients(zip(gradients, variables))
     # mom_opt = tf.train.MomentumOptimizer(

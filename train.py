@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-from common import load_model
+from common import load_model, make_parallel
 from config import Config
 from dataset import DataSet
 from logger import get_logger
@@ -24,6 +24,17 @@ def write_config(config):
             'Not overwriting. Config file already exists: ' + model_config)
     else:
         config.write(model_config)
+
+
+def parallel_ops(X, Y, T, num_classes, is_training):
+    network = __import__('networks.' + config.network,
+                         fromlist=('create_network', 'loss', 'model', 'label_error_rate', 'optimizer'))
+    logits = network.create_network(
+        X, T, dataTrain.symbols.counter, is_training)
+    loss = network.loss(logits, Y, T)
+    model, log_prob = network.model(logits, T)
+    ler = network.label_error_rate(model, Y)
+    return loss, ler
 
 
 def train_model(dataTrain, datavalid, config):
@@ -42,16 +53,18 @@ def train_model(dataTrain, datavalid, config):
     else:
         X, T, Y, _ = dataTrain.get_batch_op()
 
-    logits = network.create_network(
-        X, T, dataTrain.symbols.counter, is_training)
-    loss = network.loss(logits, Y, T)
-    model, log_prob = network.model(logits, T)
-    mean_ler = network.label_error_rate(model, Y)
+    if config.num_gpus <= 1:
+        loss, mean_ler = parallel_ops(X=X, Y=Y, T=T, num_classes=dataTrain.symbols.counter, is_training=is_training)
+    else:
+        loss, ler= make_parallel(
+           parallel_ops, num_gpus=config.num_gpus, X=X, Y=Y, T=T, num_classes=dataTrain.symbols.counter, is_training=is_training)
+        loss = tf.reduce_mean(loss)
+        mean_ler = tf.reduce_mean(ler)
     optimizer = network.optimizer(loss, config.learningrate)
 
     init = tf.global_variables_initializer()
     saver = tf.train.Saver()
-    sess = tf.Session()
+    sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
     sess.run(init)
 
     global_step = config.start_step
@@ -69,19 +82,18 @@ def train_model(dataTrain, datavalid, config):
             t0 = time.time()
             _, loss_val, mean_ler_value = sess.run(
                 [optimizer, loss, mean_ler], feed_dict={is_training: True})
-            metrics['train_time_sec'] = metrics['train_time_sec'] + \
-                (time.time() - t0)
+            metrics['train_time_sec'] += (time.time() - t0)
             metrics['avg_loss'] += loss_val
             metrics['avg_ler'] += mean_ler_value
         except tf.errors.OutOfRangeError:
-            logger.info("Done Training...")
             break
 
         if global_step % report_step == 0:
             saver.save(sess, os.path.join(config.model_dir, 'model'),
                        global_step=global_step)
             logger.info('Step: %04d' % (global_step) + ', cost = %.4f' %
-                        (metrics['avg_loss'] / report_step) + ', ler = %.4f' % (metrics['avg_ler'] / report_step))
+                        (metrics['avg_loss'] / report_step) + ', ler = %.4f' % (metrics['avg_ler'] / report_step) +
+                        ', time = %.4f' % (metrics['train_time_sec']))
             metrics['avg_loss'] = 0
             metrics['avg_ler'] = 0
             if datavalid:
@@ -90,6 +102,7 @@ def train_model(dataTrain, datavalid, config):
                 logger.info('Valid: cost = %.4f' % (valid_loss_val) +
                             ', ler = %.4f' % (valid_mean_ler_value))
 
+    sess.close()
     logger.info("Finished training!!!")
 
 
