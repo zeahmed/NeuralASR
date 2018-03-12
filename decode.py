@@ -9,7 +9,6 @@ from common import convert_2_str, load_model
 from config import Config
 from dataset import DataSet
 from logger import get_logger
-from networks.deepspeech import create_model
 
 logger = get_logger()
 
@@ -19,14 +18,17 @@ def decode(dataTest, model_dir):
     logger.info('Label Dimensions: ' + str(dataTest.get_label_shape()))
 
     network = __import__('networks.' + config.network,
-                         fromlist=('create_model'))
+                         fromlist=('create_network', 'loss', 'model', 'label_error_rate'))
 
     tf.set_random_seed(1)
     X, T, Y, O = dataTest.get_batch_op()
     is_training = tf.placeholder(tf.bool)
 
-    model, loss, mean_ler, log_prob = network.create_model(
-        X, Y, T, dataTest.symbols.counter, is_training)
+    logits = network.create_network(
+        X, T, dataTest.symbols.counter, is_training)
+    loss = network.loss(logits, Y, T)
+    model, log_prob = network.model(logits, T)
+    mean_ler = network.label_error_rate(model, Y)
 
     init = tf.global_variables_initializer()
     saver = tf.train.Saver()

@@ -16,14 +16,16 @@ logger = get_logger()
 
 def decode(model_dir, mfcc, sym, seq_len):
     network = __import__('networks.' + config.network,
-                         fromlist=('create_model'))
+                         fromlist=('create_network', 'model'))
+
     X = tf.placeholder(tf.float32, [1, None, mfcc.shape[2]])
     Y = tf.sparse_placeholder(tf.int32)
     T = tf.placeholder(tf.int32, [None])
     is_training = tf.placeholder(tf.bool)
 
-    model, loss, mean_ler, log_prob = network.create_model(
-        X, Y, T, sym.counter, is_training)
+    logits = network.create_network(
+        X, T, sym.counter, is_training)
+    model, log_prob = network.model(logits, T)
 
     init = tf.global_variables_initializer()
     saver = tf.train.Saver()

@@ -31,7 +31,7 @@ def train_model(dataTrain, datavalid, config):
     logger.info('Label Dimensions: ' + str(dataTrain.get_label_shape()))
 
     network = __import__('networks.' + config.network,
-                         fromlist=('create_model', 'create_optimizer'))
+                         fromlist=('create_network', 'loss', 'model', 'label_error_rate', 'optimizer'))
 
     tf.set_random_seed(1)
     is_training = tf.placeholder(tf.bool)
@@ -42,10 +42,12 @@ def train_model(dataTrain, datavalid, config):
     else:
         X, T, Y, _ = dataTrain.get_batch_op()
 
-    model, loss, mean_ler, log_prob = network.create_model(
-        X, Y, T, dataTrain.symbols.counter, is_training)
-
-    optimizer = network.create_optimizer(loss, config.learningrate)
+    logits = network.create_network(
+        X, T, dataTrain.symbols.counter, is_training)
+    loss = network.loss(logits, Y, T)
+    model, log_prob = network.model(logits, T)
+    mean_ler = network.label_error_rate(model, Y)
+    optimizer = network.optimizer(loss, config.learningrate)
 
     init = tf.global_variables_initializer()
     saver = tf.train.Saver()

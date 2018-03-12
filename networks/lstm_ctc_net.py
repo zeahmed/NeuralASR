@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-def create_model(features, labels, seq_len, num_classes, is_training):
+def create_model(features, seq_len, num_classes, is_training):
 
     num_hidden = 100
     num_layers = 3
@@ -32,18 +32,28 @@ def create_model(features, labels, seq_len, num_classes, is_training):
 
     # Time major
     logits = tf.transpose(logits, (1, 0, 2))
-    loss = tf.reduce_mean(tf.nn.ctc_loss(labels, logits, seq_len))
 
+    return logits
+
+
+def loss(logits, labels, seq_len):
+    return tf.reduce_mean(tf.nn.ctc_loss(labels, logits, seq_len))
+
+
+def model(logits, seq_len):
     model, log_prob = tf.nn.ctc_beam_search_decoder(
         logits, seq_len)  # tf.nn.ctc_greedy_decoder(logits, seq_len)
+    return model[0], log_prob
 
+
+def label_error_rate(model, labels):
     # Label Error Rate
-    ler = tf.edit_distance(tf.cast(model[0], tf.int32), labels)
+    ler = tf.edit_distance(tf.cast(model, tf.int32), labels)
     mean_ler = tf.reduce_mean(ler)
+    return mean_ler
 
-    return model[0], loss, ler
 
-def create_optimizer(loss, learning_rate):
+def optimizer(loss, learning_rate):
     adam_opt = tf.train.AdamOptimizer(
         learning_rate=learning_rate)  # .minimize(loss)
     gradients, variables = zip(*adam_opt.compute_gradients(loss))
