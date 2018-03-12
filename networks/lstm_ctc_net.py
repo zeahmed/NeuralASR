@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-def create_model(features, seq_len, num_classes, is_training):
+def create_network(features, seq_len, num_classes, is_training):
 
     num_hidden = 100
     num_layers = 3
