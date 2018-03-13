@@ -147,13 +147,14 @@ A raw audio file can also be converted in to text using following command
 ```
 $ python decode_wav.py -c config -i input.wav
 ```
-## Future Direction
+## To-Do
 
 - Add other audio featurization techniques in addition to MFCCs.
 - Run the benchmarks and highlight results on this page.
 - Make it deep learning platform independent i.e. include Caffe, CNTK, torch etc.
 
-## Contribution
-Contributions are welcome on any area of the system. The following is a list of major contributor(s).
+## Contribution(s)
+Contributions are welcome on any area of the system. Please see to-do list above for any idea.
+The following is a list of major contributor(s).
 
 - Zeeshan Ahmed (zeeshan.ahmed.za at gmail dot com)
