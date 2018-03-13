@@ -53,7 +53,7 @@ input=${MFCC Featurizer:output}/train.scp
 
 [Test]
 #### File containing list of .pkl file generated from preprocess_mfcc.py
-#input=${MFCC Featurizer:output}/test.scp
+input=${MFCC Featurizer:output}/test.scp
 
 [MFCC Featurizer]
 #### CSV File containing audio file path, transcription, audio size in each row
@@ -64,13 +64,13 @@ output=sample_featurized
 ```
 
 ## Preprocessing
-Conversion of speech wave form into MFCCs or other features takes a bit time. To speech up the processing, `TFSpeechRecEngine` provides an option to pre-featurized the audio data so that training process can be speedup. The featurized MFCCs together with other meta-data are stored in a python [pickle](https://pythontips.com/2013/08/02/what-is-pickle-in-python/) file. During the training data is read from these pickle file. Following is a simple command to generate featurized files from list of audio files
+Conversion of speech wave form into MFCCs or other features takes a bit time. To speech up the processing, `TFSpeechRecEngine` provides an option to pre-featurized the audio data so that training process can be speedup. The featurized MFCCs together with other meta-data are stored in a python [pickle](https://pythontips.com/2013/08/02/what-is-pickle-in-python/) file. During training, data is read from these pickle file. Following is a simple command to generate featurized files from a list of audio files
 
 ```
 $ python preprocess_mfcc.py -c config
 ```
 
-This command also cleans the transcription text based on the regular expression defined in the config file e.g. `unc_regex=[^a-z0-9 ]` on above config file.
+This command also cleans the transcription text based on the regular expression defined in the config file e.g. `unc_regex=[^a-z0-9 ]` in above config file. In addition to generating the .pkl file for each training example, the script also partition data into training and test sets. Two more files are created in the `output` directory corresponding to train and test sets. The files are named according to `input` parameters in `[Train]` and `[Test]` sections of config file.
 
 ## Network Definition
 Networks are defined in a tensorflow python code file. Some example networks are available in networks directory in this repository. For example, following is a naive example of LSTM based network from networks/lstm_ctc_net.py file.
@@ -131,7 +131,7 @@ Once the network is defined, the system can be trained using following command
 ```
 $ python train.py -c config
 ```
-Training is done in parallel if `num_gpus > 1` in the config file. 
+Training is done in parallel if `num_gpus > 1` in the config file. Training script saves the intermediate model, its parameters and necessary data files into a directory defined by `mode_dir` parameter in config file. The frequency of save operator is defined by the `report_step` parameter in config file.
 
 ## Decoding
 The following command can be used to decode evaluation/test data and compute the metrics such as ctc_loss and label error rate etc.
