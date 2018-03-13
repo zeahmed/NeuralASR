@@ -83,7 +83,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     config = Config(args.config)
-    data = DataSet(config.train_input, config.sym_file, config.feature_size,
+    data = DataSet(config.test_input, config.sym_file, config.feature_size,
                    batch_size=config.batch_size, epochs=1)
     next_batch = data.get_batch_op()
     result = tf.add(next_batch[0], next_batch[0])
@@ -92,9 +92,8 @@ if __name__ == '__main__':
         while True:
             try:
                 mfcc, seq_len, labels, transcript = session.run(next_batch)
-                print(i, mfcc.shape, labels, transcript)
+                print(i, ' - ', mfcc.shape, ' - ', len(transcript))
                 i += 1
-                break
             except tf.errors.OutOfRangeError:
                 print("End of dataset")  # ==> "End of dataset"
                 break

@@ -102,5 +102,5 @@ if __name__ == '__main__':
     dataValid = None
     if config.test_input:
         dataValid = DataSet(config.test_input, config.sym_file, config.feature_size,
-                            batch_size=1, epochs=None)
+                            batch_size=config.batch_size, epochs=None)
     train_model(dataTrain, dataValid, config)
