@@ -6,7 +6,7 @@ from .common import (label_error_rate, loss, model, setup_training_network,
 
 def create_network(features, seq_len, num_classes):
 
-    num_hidden = 100
+    num_hidden = 500
     num_layers = 3
 
     cells = [tf.contrib.rnn.LSTMCell(num_hidden, state_is_tuple=True)

@@ -17,7 +17,6 @@ def create_network(features, seq_len, num_classes):
     lstm_bw_cell = tf.contrib.rnn.BasicLSTMCell(
         num_hidden, forget_bias=1.0, state_is_tuple=True, reuse=tf.get_variable_scope().reuse)
 
-    # Now we feed `layer_3` into the LSTM BRNN cell and obtain the LSTM BRNN output.
     outputs, _ = tf.nn.bidirectional_dynamic_rnn(cell_fw=lstm_fw_cell,
                                                  cell_bw=lstm_bw_cell,
                                                  inputs=features,
