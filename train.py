@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-from common import load_model, make_parallel
+from common import load_model
 from config import Config
 from dataset import DataSet
 from logger import get_logger
@@ -26,23 +26,12 @@ def write_config(config):
         config.write(model_config)
 
 
-def parallel_ops(X, Y, T, num_classes, is_training):
-    network = __import__('networks.' + config.network,
-                         fromlist=('create_network', 'loss', 'model', 'label_error_rate', 'optimizer'))
-    logits = network.create_network(
-        X, T, dataTrain.symbols.counter, is_training)
-    loss = network.loss(logits, Y, T)
-    model, log_prob = network.model(logits, T)
-    ler = network.label_error_rate(model, Y)
-    return loss, ler
-
-
 def train_model(dataTrain, datavalid, config):
     logger.info('Batch Dimensions: ' + str(dataTrain.get_feature_shape()))
     logger.info('Label Dimensions: ' + str(dataTrain.get_label_shape()))
 
     network = __import__('networks.' + config.network,
-                         fromlist=('create_network', 'loss', 'model', 'label_error_rate', 'optimizer'))
+                         fromlist=('setup_training_network', 'create_network'))
 
     tf.set_random_seed(1)
     is_training = tf.placeholder(tf.bool)
@@ -53,14 +42,8 @@ def train_model(dataTrain, datavalid, config):
     else:
         X, T, Y, _ = dataTrain.get_batch_op()
 
-    if config.num_gpus <= 1:
-        loss, mean_ler = parallel_ops(X=X, Y=Y, T=T, num_classes=dataTrain.symbols.counter, is_training=is_training)
-    else:
-        loss, ler= make_parallel(
-           parallel_ops, num_gpus=config.num_gpus, X=X, Y=Y, T=T, num_classes=dataTrain.symbols.counter, is_training=is_training)
-        loss = tf.reduce_mean(loss)
-        mean_ler = tf.reduce_mean(ler)
-    optimizer = network.optimizer(loss, config.learningrate)
+    optimizer, loss, mean_ler = network.setup_training_network(network.create_network,
+                                                               X=X, Y=Y, T=T, num_classes=dataTrain.symbols.counter, num_gpus=config.num_gpus, learningrate=config.learningrate)
 
     init = tf.global_variables_initializer()
     saver = tf.train.Saver()

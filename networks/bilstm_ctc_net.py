@@ -1,9 +1,10 @@
 import tensorflow as tf
 
-from .common import label_error_rate, loss, model, optimizer
+from .common import (label_error_rate, loss, model, setup_training_network,
+                     variable_on_worker_level)
 
 
-def create_network(features, seq_len, num_classes, is_training):
+def create_network(features, seq_len, num_classes):
 
     num_hidden = 500
     num_layers = 1
@@ -11,17 +12,10 @@ def create_network(features, seq_len, num_classes, is_training):
     # Forward direction cell:
     lstm_fw_cell = tf.contrib.rnn.BasicLSTMCell(
         num_hidden, forget_bias=1.0, state_is_tuple=True, reuse=tf.get_variable_scope().reuse)
-    # lstm_fw_cell = tf.contrib.rnn.DropoutWrapper(lstm_fw_cell,
-    #                                             input_keep_prob=1.0 - dropout[3],
-    #                                             output_keep_prob=1.0 - dropout[3],
-    #                                             seed=FLAGS.random_seed)
+
     # Backward direction cell:
     lstm_bw_cell = tf.contrib.rnn.BasicLSTMCell(
         num_hidden, forget_bias=1.0, state_is_tuple=True, reuse=tf.get_variable_scope().reuse)
-    # lstm_bw_cell = tf.contrib.rnn.DropoutWrapper(lstm_bw_cell,
-    #                                             input_keep_prob=1.0 - dropout[4],
-    #                                             output_keep_prob=1.0 - dropout[4],
-    #                                             seed=FLAGS.random_seed)
 
     # Now we feed `layer_3` into the LSTM BRNN cell and obtain the LSTM BRNN output.
     outputs, _ = tf.nn.bidirectional_dynamic_rnn(cell_fw=lstm_fw_cell,
@@ -35,11 +29,11 @@ def create_network(features, seq_len, num_classes, is_training):
 
     outputs = tf.reshape(outputs, [-1, num_hidden])
 
-    W = tf.Variable(tf.truncated_normal([num_hidden,
-                                         num_classes],
-                                        stddev=0.1))
+    W = variable_on_worker_level(
+        'W', [num_hidden, num_classes], tf.contrib.layers.xavier_initializer(uniform=False))
 
-    b = tf.Variable(tf.constant(0., shape=[num_classes]))
+    b = variable_on_worker_level(
+        'b', [num_classes], tf.constant_initializer(0.))
 
     # Doing the affine projection
     logits = tf.matmul(outputs, W) + b

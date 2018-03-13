@@ -1,12 +1,10 @@
 import tensorflow as tf
 
-from .common import loss, model, label_error_rate, optimizer
-
-def variable_on_worker_level(name, shape, initializer):
-    return tf.get_variable(name=name, shape=shape, initializer=initializer)
+from .common import (label_error_rate, loss, model, setup_training_network,
+                     variable_on_worker_level)
 
 
-def create_network(features, seq_len, num_classes, is_training):
+def create_network(features, seq_len, num_classes):
 
     n_input = features.get_shape().as_list()[2]
     dropout = [0.05, 0.05, 0.05, 0., 0., 0.05]
