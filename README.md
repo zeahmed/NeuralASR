@@ -154,6 +154,6 @@ $ python decode_wav.py -c config -i input.wav
 - Make it deep learning platform independent i.e. include Caffe, CNTK, torch etc.
 
 ## Contribution
-Contributions are welcome on any area of the system. The following is a list of major contributor in this repository
+Contributions are welcome on any area of the system. The following is a list of major contributor(s).
 
 - Zeeshan Ahmed (zeeshan.ahmed.za at gmail dot com)
