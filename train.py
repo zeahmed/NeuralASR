@@ -31,7 +31,7 @@ def train_model(dataTrain, datavalid, config):
     logger.info('Label Dimensions: ' + str(dataTrain.get_label_shape()))
 
     network = __import__('networks.' + config.network,
-                         fromlist=('create_network', 'loss', 'model', 'label_error_rate', 'optimizer'))
+                         fromlist=('setup_training_network', 'create_network'))
 
     tf.set_random_seed(1)
     is_training = tf.placeholder(tf.bool)
@@ -42,16 +42,12 @@ def train_model(dataTrain, datavalid, config):
     else:
         X, T, Y, _ = dataTrain.get_batch_op()
 
-    logits = network.create_network(
-        X, T, dataTrain.symbols.counter, is_training)
-    loss = network.loss(logits, Y, T)
-    model, log_prob = network.model(logits, T)
-    mean_ler = network.label_error_rate(model, Y)
-    optimizer = network.optimizer(loss, config.learningrate)
+    optimizer, loss, mean_ler = network.setup_training_network(network.create_network,
+                                                               X=X, Y=Y, T=T, num_classes=dataTrain.symbols.counter, num_gpus=config.num_gpus, learningrate=config.learningrate)
 
     init = tf.global_variables_initializer()
     saver = tf.train.Saver()
-    sess = tf.Session()
+    sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
     sess.run(init)
 
     global_step = config.start_step
@@ -69,19 +65,18 @@ def train_model(dataTrain, datavalid, config):
             t0 = time.time()
             _, loss_val, mean_ler_value = sess.run(
                 [optimizer, loss, mean_ler], feed_dict={is_training: True})
-            metrics['train_time_sec'] = metrics['train_time_sec'] + \
-                (time.time() - t0)
+            metrics['train_time_sec'] += (time.time() - t0)
             metrics['avg_loss'] += loss_val
             metrics['avg_ler'] += mean_ler_value
         except tf.errors.OutOfRangeError:
-            logger.info("Done Training...")
             break
 
         if global_step % report_step == 0:
             saver.save(sess, os.path.join(config.model_dir, 'model'),
                        global_step=global_step)
             logger.info('Step: %04d' % (global_step) + ', cost = %.4f' %
-                        (metrics['avg_loss'] / report_step) + ', ler = %.4f' % (metrics['avg_ler'] / report_step))
+                        (metrics['avg_loss'] / report_step) + ', ler = %.4f' % (metrics['avg_ler'] / report_step) +
+                        ', time = %.4f' % (metrics['train_time_sec']))
             metrics['avg_loss'] = 0
             metrics['avg_ler'] = 0
             if datavalid:
@@ -90,6 +85,7 @@ def train_model(dataTrain, datavalid, config):
                 logger.info('Valid: cost = %.4f' % (valid_loss_val) +
                             ', ler = %.4f' % (valid_mean_ler_value))
 
+    sess.close()
     logger.info("Finished training!!!")
 
 

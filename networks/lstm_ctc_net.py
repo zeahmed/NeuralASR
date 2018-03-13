@@ -1,9 +1,10 @@
 import tensorflow as tf
 
-from .common import label_error_rate, loss, model, optimizer
+from .common import (label_error_rate, loss, model, setup_training_network,
+                     variable_on_worker_level)
 
 
-def create_network(features, seq_len, num_classes, is_training):
+def create_network(features, seq_len, num_classes):
 
     num_hidden = 500
     num_layers = 3
@@ -20,11 +21,10 @@ def create_network(features, seq_len, num_classes, is_training):
 
     outputs = tf.reshape(outputs, [-1, num_hidden])
 
-    W = tf.Variable(tf.truncated_normal([num_hidden,
-                                         num_classes],
-                                        stddev=0.1))
+    W = variable_on_worker_level(
+        'W', [num_hidden, num_classes], tf.contrib.layers.xavier_initializer(uniform=False))
 
-    b = tf.Variable(tf.constant(0., shape=[num_classes]))
+    b = variable_on_worker_level('b', [num_classes], tf.constant_initializer(0.))
 
     # Doing the affine projection
     logits = tf.matmul(outputs, W) + b

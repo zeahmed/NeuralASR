@@ -26,6 +26,7 @@ class Config(object):
         self.model_dir = parameters['model_dir']
         self.start_step = int(parameters['start_step'])
         self.report_step = int(parameters['report_step'])
+        self.num_gpus = int(parameters['num_gpus'])
         self.punc_regex = parameters['punc_regex']
         self.network = parameters['network']
         self.train_input = None
