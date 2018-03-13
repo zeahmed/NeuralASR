@@ -1,7 +1,6 @@
 import argparse
 import os
-from configparser import ConfigParser
-from configparser import ExtendedInterpolation
+from configparser import ConfigParser, ExtendedInterpolation
 
 from logger import get_logger
 
@@ -82,8 +81,7 @@ class Config(object):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Read data from featurized mfcc files.")
-    parser.add_argument("-c", "--config", required=True,
-                        help="Configuration file.")
+    parser.add_argument("config", help="Configuration file.")
     parser.add_argument("-t", "--isTest", required=False, default=False,
                         help="Is configuration file for testing?")
     args = parser.parse_args()

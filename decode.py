@@ -67,8 +67,7 @@ def decode(dataTest, model_dir):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Decode test data using trained model.")
-    parser.add_argument("-c", "--config", required=True,
-                        help="Configuration file.")
+    parser.add_argument("config", help="Configuration file.")
     args = parser.parse_args()
     config = Config(args.config, True)
     sym_file = os.path.join(

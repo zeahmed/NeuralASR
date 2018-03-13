@@ -78,12 +78,11 @@ class DataSet:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Read data from featurized mfcc files.")
-    parser.add_argument("-c", "--config", required=True,
-                        help="Configuration file.")
+    parser.add_argument("config", help="Configuration file.")
     args = parser.parse_args()
 
     config = Config(args.config)
-    data = DataSet(config.test_input, config.sym_file, config.feature_size,
+    data = DataSet(config.train_input, config.sym_file, config.feature_size,
                    batch_size=config.batch_size, epochs=1)
     next_batch = data.get_batch_op()
     result = tf.add(next_batch[0], next_batch[0])

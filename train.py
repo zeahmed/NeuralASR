@@ -92,8 +92,7 @@ def train_model(dataTrain, datavalid, config):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Train speech recognizer on featurized mfcc files.")
-    parser.add_argument("-c", "--config", required=True,
-                        help="Configuration file.")
+    parser.add_argument("config", help="Configuration file.")
     args = parser.parse_args()
 
     config = Config(args.config)

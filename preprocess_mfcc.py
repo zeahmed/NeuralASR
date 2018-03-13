@@ -54,8 +54,7 @@ def write_data(data, config, scp_file_name, sym):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Convert audio files into mfcc for training ASR")
-    parser.add_argument("-c", "--config", required=True,
-                        help="Configuration file.")
+    parser.add_argument("config", help="Configuration file.")
     args = parser.parse_args()
 
     config = Config(args.config)

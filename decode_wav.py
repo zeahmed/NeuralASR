@@ -4,12 +4,12 @@ import time
 
 import numpy as np
 import tensorflow as tf
+from utils import compute_mfcc_and_read_transcription
 
 from common import convert_2_str, load_model
 from config import Config
 from logger import get_logger
 from symbols import Symbols
-from utils import compute_mfcc_and_read_transcription
 
 logger = get_logger()
 
@@ -41,10 +41,8 @@ def decode(model_dir, mfcc, sym, seq_len):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Convert a given audio file into text using trained model.")
-    parser.add_argument("-i", "--input", required=True,
-                        help="Audio file path")
-    parser.add_argument("-c", "--config", required=True,
-                        help="Configuration file.")
+    parser.add_argument("config", help="Configuration file.")
+    parser.add_argument("input", help="Audio file path")
     args = parser.parse_args()
     config = Config(args.config, True)
 
