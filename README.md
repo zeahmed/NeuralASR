@@ -64,13 +64,13 @@ output=sample_featurized
 ```
 
 ## Preprocessing
-Conversion of speech wave form into MFCCs or other features takes a bit time. To speech up the processing, `TFSpeechRecEngine` provides an option to pre-featurized the audio data so that training process can be speedup. The featurized MFCCs together with other meta-data are stored in a python [pickle](https://pythontips.com/2013/08/02/what-is-pickle-in-python/) file. During training, data is read from these pickle file. Following is a simple command to generate featurized files from a list of audio files
+Conversion of speech wave form into MFCCs or other features takes a bit of time. To speech up the training, `TFSpeechRecEngine` provides an option to pre-featurized the audio data so that training process can be sped up. The featurized MFCCs together with other meta-data are stored in a python [pickle](https://pythontips.com/2013/08/02/what-is-pickle-in-python/) file. During training, data is read from these pickle file. Following is a simple command to generate featurized files from a list of audio files
 
 ```
 $ python preprocess_mfcc.py config
 ```
 
-This command also cleans the transcription text based on the regular expression defined in the config file e.g. `unc_regex=[^a-z0-9 ]` in above config file. In addition to generating the .pkl file for each training example, the script also partition data into training and test sets. Two more files are created in the `output` directory corresponding to train and test sets. The files are named according to `input` parameters in `[Train]` and `[Test]` sections of config file.
+This command also cleans the transcription text based on the regular expression defined in the config file e.g. `unc_regex=[^a-z0-9 ]` in above configuration. In addition to generating the .pkl file for each training example, the script also partitions data into training and test sets and places the list of train and test files in the `output` directory. The files are named according to `input` parameters in `[Train]` and `[Test]` sections of configuration file.
 
 ## Network Definition
 Networks are defined in a tensorflow python code file. Some example networks are available in networks directory in this repository. For example, following is a naive example of LSTM based network from networks/lstm_ctc_net.py file.
@@ -123,7 +123,7 @@ To use this network for training, please set `network` parameter in config file 
 network=lstm_ctc_net
 ...
 ```
-The `create_network' method defines the networks. This network is automatically parallelize by the system during training. 'ctc_loss', 'decoding' and other generic parameters are defined in networks/common.py. User can override these implementations by defining their own implementations in the network file.
+The `create_network' method defines the networks. This network is automatically parallelize by the system during training. 'ctc_loss', 'decoding' and other generic operations are defined in networks/common.py. User can override these implementations by defining their own implementations in the network file. If you create a new network, place it in the network folder. The training script loads any network defined in the configuration from network directory.
 
 ## Training
 Once the network is defined, the system can be trained using following command
@@ -131,7 +131,7 @@ Once the network is defined, the system can be trained using following command
 ```
 $ python train.py config
 ```
-Training is done in parallel if `num_gpus > 1` in the config file. Training script saves the intermediate model, its parameters and necessary data files into a directory defined by `mode_dir` parameter in config file. The frequency of save operator is defined by the `report_step` parameter in config file.
+Training is done in parallel if `num_gpus > 1` in the config file. Training script saves the intermediate model, its parameters and necessary data files into a directory defined by `mode_dir` parameter in config file. The frequency of save operation is defined by the `report_step` parameter in config file.
 
 ## Decoding
 The following command can be used to decode evaluation/test data and compute the metrics such as ctc_loss and label error rate etc.
@@ -147,11 +147,14 @@ A raw audio file can also be converted in to text using following command
 ```
 $ python decode_wav.py config input.wav
 ```
+The `input.wav` will be downsampled based on the settings in the configuration file.
+
 ## To-Do
 
 - Add other audio featurization techniques in addition to MFCCs.
 - Run the benchmarks and highlight results on this page.
 - Make it deep learning platform independent i.e. include Caffe, CNTK, torch etc.
+- Add language model decoding.
 
 ## Contribution(s)
 Contributions are welcome on any area of the system. Please see to-do list above for any idea.
