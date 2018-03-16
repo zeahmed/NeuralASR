@@ -131,7 +131,10 @@ Once the network is defined, the system can be trained using following command
 ```
 $ python train.py config
 ```
-Training is done in parallel if `num_gpus > 1` in the config file. Training script saves the intermediate model, its parameters and necessary data files into a directory defined by `mode_dir` parameter in config file. The frequency of save operation is defined by the `report_step` parameter in config file.
+Training script saves the intermediate model, its parameters and necessary data files into a directory defined by `mode_dir` parameter in config file. The frequency of save operation is defined by the `report_step` parameter in config file.
+
+### Parallel Training on GPUs
+Training is automatically done in parallel on GPUs if `num_gpus > 1` in the config file. The system employs data parallel technique. 'N' number of batches are processed in parallel where 'N' is the number of GPUs ('num_gpus') in config. 
 
 ## Decoding
 The following command can be used to decode evaluation/test data and compute the metrics such as ctc_loss and label error rate etc.
