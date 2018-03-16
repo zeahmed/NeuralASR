@@ -26,6 +26,10 @@ class Config(object):
         self.start_step = int(parameters['start_step'])
         self.report_step = int(parameters['report_step'])
         self.num_gpus = int(parameters['num_gpus'])
+
+
+        self.batch_size = self.batch_size * ( self.num_gpus if self.num_gpus > 0 else 1)
+
         self.punc_regex = parameters['punc_regex']
         self.network = parameters['network']
         self.train_input = None
@@ -65,6 +69,7 @@ class Config(object):
         config_str += ('model_dir=%s\n' % self.model_dir)
         config_str += ('start_step=%d\n' % self.start_step)
         config_str += ('report_step=%d\n' % self.report_step)
+        config_str += ('num_gpus=%d\n' % self.num_gpus)
         config_str += ('punc_regex=%s\n' % self.punc_regex)
         config_str += ('network=%s\n' % self.network)
         config_str += ('sym_file=%s\n' % self.sym_file)
