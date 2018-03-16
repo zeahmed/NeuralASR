@@ -66,13 +66,13 @@ def make_parallel(fn, num_gpus, **kwargs):
     return [tf.stack(o, axis=0) for o in out_split]
 
 
-def setup_training_network(create_network, X, Y, T, num_classes, num_gpus, learningrate):
+def setup_training_network(create_network, X, Y, T, num_classes, num_gpus, learningrate, is_training):
     adam_opt = tf.train.AdamOptimizer(
         learning_rate=learningrate)  # .minimize(loss)
     tower_grads = []
 
-    def create_ops(X, Y, T, num_classes):
-        logits = create_network(X, T, num_classes)
+    def create_ops(X, Y, T):
+        logits = create_network(X, T, num_classes, is_training)
         l = loss(logits, Y, T)
         m, log_prob = model(logits, T)
         ler = label_error_rate(m, Y)
@@ -83,10 +83,10 @@ def setup_training_network(create_network, X, Y, T, num_classes, num_gpus, learn
         return l, ler
 
     if num_gpus <= 1:
-        l, mean_ler = create_ops(X=X, Y=Y, T=T, num_classes=num_classes)
+        l, mean_ler = create_ops(X=X, Y=Y, T=T)
     else:
         l, ler = make_parallel(
-            create_ops, num_gpus=num_gpus, X=X, Y=Y, T=T, num_classes=num_classes)
+            create_ops, num_gpus=num_gpus, X=X, Y=Y, T=T)
         l = tf.reduce_mean(l)
         mean_ler = tf.reduce_mean(ler)
 
