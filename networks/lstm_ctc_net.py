@@ -4,8 +4,10 @@ from .common import (label_error_rate, loss, model, setup_training_network,
                      variable_on_worker_level)
 
 
-def create_network(features, seq_len, num_classes):
-
+def create_network(features, seq_len, num_classes, is_training):
+    '''
+    Simple LSTM network
+    '''
     num_hidden = 500
     num_layers = 3
 

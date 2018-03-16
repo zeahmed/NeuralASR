@@ -4,8 +4,11 @@ from .common import (label_error_rate, loss, model, setup_training_network,
                      variable_on_worker_level)
 
 
-def create_network(features, seq_len, num_classes):
-
+def create_network(features, seq_len, num_classes, is_training):
+    '''
+    This network is similar deepspeech network https://github.com/mozilla/DeepSpeech
+    modify the parameters below to adjust settings.
+    '''
     n_input = features.get_shape().as_list()[2]
     dropout = [0.05, 0.05, 0.05, 0., 0., 0.05]
     n_hidden = 2048

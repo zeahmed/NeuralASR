@@ -43,7 +43,13 @@ def train_model(dataTrain, datavalid, config):
         X, T, Y, _ = dataTrain.get_batch_op()
 
     optimizer, loss, mean_ler = network.setup_training_network(network.create_network,
-                                                               X=X, Y=Y, T=T, num_classes=dataTrain.symbols.counter, num_gpus=config.num_gpus, learningrate=config.learningrate)
+                                                               X=X,
+                                                               Y=Y,
+                                                               T=T,
+                                                               num_classes=dataTrain.symbols.counter,
+                                                               num_gpus=config.num_gpus,
+                                                               learningrate=config.learningrate,
+                                                               is_training=is_training)
 
     init = tf.global_variables_initializer()
     saver = tf.train.Saver()
