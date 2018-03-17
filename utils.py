@@ -43,10 +43,9 @@ def read_label_text(txtfile, punc_regex):
 
 def compute_mfcc_and_read_transcription(wavfile, sr, numcontext, numcep, punc_regex=None, txtfile=None):
     audio_mfcc = convert_to_mfcc(wavfile, sr, numcontext, numcep)
-    seq_len = np.asarray(audio_mfcc.shape[0], dtype=np.int32)
 
     if txtfile:
         clean_transcription = read_label_text(txtfile, punc_regex)
-        return audio_mfcc, seq_len, clean_transcription
+        return audio_mfcc, clean_transcription
     else:
-        return audio_mfcc, seq_len
+        return audio_mfcc

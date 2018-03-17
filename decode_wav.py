@@ -46,10 +46,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     config = Config(args.config, True)
 
-    sym_file = os.path.join(
-        config.model_dir, os.path.basename(config.sym_file))
-    sym = Symbols(sym_file)
-    mfcc, seq_len = compute_mfcc_and_read_transcription(
+    mfcc = compute_mfcc_and_read_transcription(
         args.input, config.samplerate, config.numcontext, config.numcep)
     mfcc = np.expand_dims(mfcc, axis=0)
-    decode(config.model_dir, mfcc, sym, [seq_len])
+    seq_len = np.asarray(mfcc.shape[0], dtype=np.int32)
+    decode(config.model_dir, mfcc, config.symbols, [seq_len])

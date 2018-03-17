@@ -1,3 +1,4 @@
+import os
 from logger import get_logger
 
 logger = get_logger()
@@ -8,9 +9,10 @@ class Symbols(object):
         self.space = '<space>'
         self.blank = '<blank>'
         self.counter = 1
+        self.filename = filename
         self.sym_to_id = {self.space: 0}
         self.id_2_sym = {0: self.space}
-        if filename:
+        if filename and os.path.exists(filename):
             logger.info('Reading output symbols from: ' + filename)
             with open(filename, 'r') as f:
                 for line in f:
@@ -53,7 +55,9 @@ class Symbols(object):
         str_decoded = str_decoded.replace('  ', ' ')
         return str_decoded
 
-    def write(self, filename):
+    def write(self, filename=None):
+        if not filename:
+            filename = self.filename
         logger.info('Writing output symbols to: ' + filename)
         with open(filename, 'w') as f:
             for k, v in sorted(self.sym_to_id.items()):

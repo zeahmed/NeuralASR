@@ -13,7 +13,7 @@ from logger import get_logger
 logger = get_logger()
 
 
-def decode(dataTest, model_dir):
+def decode(dataTest, config):
     logger.info('Batch Dimensions: ' + str(dataTest.get_feature_shape()))
     logger.info('Label Dimensions: ' + str(dataTest.get_label_shape()))
 
@@ -25,7 +25,7 @@ def decode(dataTest, model_dir):
     is_training = tf.placeholder(tf.bool)
 
     logits = network.create_network(
-        X, T, dataTest.symbols.counter, is_training)
+        X, T, config.symbols.counter, is_training)
     loss = network.loss(logits, Y, T)
     model, log_prob = network.model(logits, T)
     mean_ler = network.label_error_rate(model, Y)
@@ -35,7 +35,7 @@ def decode(dataTest, model_dir):
     sess = tf.Session()
     sess.run(init)
 
-    load_model(1, sess, saver, model_dir)
+    load_model(1, sess, saver, config.model_dir)
 
     test_time_sec = 0
 
@@ -53,7 +53,7 @@ def decode(dataTest, model_dir):
                 (time.time() - t0)
             metrics['avg_loss'] += valid_loss_val
             metrics['avg_ler'] += valid_mean_ler_value
-            str_decoded = convert_2_str(output, dataTest.symbols)
+            str_decoded = convert_2_str(output, config.symbols)
             logger.info('Decoded: ' + str_decoded)
             logger.info('Original: ' + Original_transcript[0].decode('utf-8'))
         except tf.errors.OutOfRangeError:
@@ -70,8 +70,6 @@ if __name__ == '__main__':
     parser.add_argument("config", help="Configuration file.")
     args = parser.parse_args()
     config = Config(args.config, True)
-    sym_file = os.path.join(
-        config.model_dir, os.path.basename(config.sym_file))
-    dataTest = DataSet(config.test_input, sym_file,
+    dataTest = DataSet(config.test_input,
                        config.feature_size,  batch_size=1, epochs=1)
-    decode(dataTest, config.model_dir)
+    decode(dataTest, config)

@@ -46,7 +46,7 @@ def train_model(dataTrain, datavalid, config):
                                                                X=X,
                                                                Y=Y,
                                                                T=T,
-                                                               num_classes=dataTrain.symbols.counter,
+                                                               num_classes=config.symbols.counter,
                                                                num_gpus=config.num_gpus,
                                                                learningrate=config.learningrate,
                                                                is_training=is_training)
@@ -59,7 +59,7 @@ def train_model(dataTrain, datavalid, config):
     global_step = config.start_step
     load_model(global_step, sess, saver, config.model_dir)
     write_config(config)
-    dataTrain.symbols.write(os.path.join(
+    config.symbols.write(os.path.join(
         config.model_dir, os.path.basename(config.sym_file)))
 
     metrics = {'train_time_sec': 0, 'avg_loss': 0, 'avg_ler': 0}
@@ -102,10 +102,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     config = Config(args.config)
-    dataTrain = DataSet(config.train_input, config.sym_file, config.feature_size,
+    dataTrain = DataSet(config.train_input, config.feature_size,
                         batch_size=config.batch_size, epochs=config.epochs)
     dataValid = None
     if config.test_input:
-        dataValid = DataSet(config.test_input, config.sym_file, config.feature_size,
+        dataValid = DataSet(config.test_input, config.feature_size,
                             batch_size=config.batch_size, epochs=None)
     train_model(dataTrain, dataValid, config)
