@@ -102,10 +102,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     config = Config(args.config)
-    dataTrain = DataSet(config.train_input, config.feature_size,
-                        batch_size=config.batch_size, epochs=config.epochs)
+    dataTrain = DataSet(config.train_input, config)
     dataValid = None
     if config.test_input:
-        dataValid = DataSet(config.test_input, config.feature_size,
-                            batch_size=config.batch_size, epochs=None)
+        config_test = Config(args.config)
+        config_test.epochs = None
+        dataValid = DataSet(config_test.test_input, config_test)
     train_model(dataTrain, dataValid, config)

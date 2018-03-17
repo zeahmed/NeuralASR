@@ -12,21 +12,35 @@ from config import Config
 
 
 class DataSet:
-    def __init__(self, filename, feature_size, batch_size=1, epochs=50):
-        self.feature_size = feature_size
+    def __init__(self, filename, config):
+        self.feature_size = config.feature_size
         self.filename = filename
-        self.batch_size = batch_size
-        self.epochs = epochs
+        self.batch_size = config.batch_size
+        self.epochs = config.epochs
+        self.config = config
         with open(self.filename, 'r') as f:
             self.X = f.readlines()
             self.X = [os.path.join(os.path.dirname(self.filename), x.strip())
                       for x in self.X]
 
+    def augment_mfcc(self, mfcc):
+        r = np.random.randint(self.config.rand_shift*-
+                              1, self.config.rand_shift)
+        mfcc = np.roll(mfcc, r, axis=0)
+        if r > 0:
+            mfcc[:r, :] = 0
+        elif r < 0:
+            mfcc[r:, :] = 0
+        return mfcc
+
     def load_pkl(self, pklfilename):
         with open(pklfilename, 'rb') as input:
             audiosample = pickle.load(input)
         seq_len = np.asarray(audiosample.mfcc.shape[0], dtype=np.int32)
-        return audiosample.mfcc, audiosample.labels, seq_len, audiosample.transcription
+
+        if self.config.rand_shift > 0:
+            mfcc = self.augment_mfcc(audiosample.mfcc)
+        return mfcc, audiosample.labels, seq_len, audiosample.transcription
 
     def get_batch_op(self, perform_shuffle=False):
         dataset = tf.data.Dataset.from_tensor_slices(self.X)
@@ -76,8 +90,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     config = Config(args.config)
-    data = DataSet(config.train_input, config.feature_size,
-                   batch_size=config.batch_size, epochs=1)
+    config.epochs = 1
+    data = DataSet(config.train_input, config)
     next_batch = data.get_batch_op()
     result = tf.add(next_batch[0], next_batch[0])
     with tf.Session() as session:
@@ -85,7 +99,8 @@ if __name__ == '__main__':
         while True:
             try:
                 mfcc, seq_len, labels, transcript = session.run(next_batch)
-                print(i, ' - ', mfcc.shape, ' - ', labels[2], '-', len(transcript))
+                print(i, ' - ', mfcc.shape, ' - ',
+                      labels[2], '-', len(transcript))
                 i += 1
             except tf.errors.OutOfRangeError:
                 print("End of dataset")  # ==> "End of dataset"
