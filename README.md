@@ -17,6 +17,9 @@ numcep=26
 #### Number of MFCCs to take into account in context. The feature vector size will be "(2 * numcontext + 1) * numcep"
 numcontext=10
 
+#### randomly shift feature vector to avoid over-fitting
+#rand_shift=2
+
 #### Batch size for training neural network
 batch_size=16
 
