@@ -9,16 +9,14 @@ import tensorflow as tf
 
 from audiosample import AudioSample
 from config import Config
-from symbols import Symbols
 
 
 class DataSet:
-    def __init__(self, filename, sym_file, feature_size, batch_size=1, epochs=50):
+    def __init__(self, filename, feature_size, batch_size=1, epochs=50):
         self.feature_size = feature_size
         self.filename = filename
         self.batch_size = batch_size
         self.epochs = epochs
-        self.symbols = Symbols(sym_file)
         with open(self.filename, 'r') as f:
             self.X = f.readlines()
             self.X = [os.path.join(os.path.dirname(self.filename), x.strip())
@@ -27,19 +25,20 @@ class DataSet:
     def load_pkl(self, pklfilename):
         with open(pklfilename, 'rb') as input:
             audiosample = pickle.load(input)
-        return audiosample.mfcc, audiosample.seq_len, audiosample.transcription
+        seq_len = np.asarray(audiosample.mfcc.shape[0], dtype=np.int32)
+        return audiosample.mfcc, audiosample.labels, seq_len, audiosample.transcription
 
     def get_batch_op(self, perform_shuffle=False):
         dataset = tf.data.Dataset.from_tensor_slices(self.X)
         dataset = dataset.map(lambda pklfilename: tuple(tf.py_func(
-            self.load_pkl, [pklfilename], [tf.float32, tf.int32, tf.string])))
+            self.load_pkl, [pklfilename], [tf.float32, tf.int32, tf.int32, tf.string])))
         dataset = dataset.repeat(self.epochs)
         dataset = dataset.padded_batch(self.batch_size, padded_shapes=(
-            [None, self.feature_size], [], []))
+            [None, self.feature_size], [None], [], []))
         iterator = dataset.make_one_shot_iterator()
-        batch_features, seq_len, original_transcript = iterator.get_next()
+        batch_features, labels, seq_len, original_transcript = iterator.get_next()
 
-        indices, values, dense_shape = tf.py_func(self.sparse_tuple_from, [original_transcript], [
+        indices, values, dense_shape = tf.py_func(self.sparse_tuple_from, [labels], [
                                                   tf.int64, tf.int32, tf.int64])
         batch_transcript = tf.SparseTensor(
             indices=indices, values=values, dense_shape=dense_shape)
@@ -55,11 +54,6 @@ class DataSet:
         return len(self.X)
 
     def sparse_tuple_from(self, sequences):
-        for i, text in enumerate(sequences):
-            text = text.decode('utf-8')
-            sequences[i] = np.asarray(
-                [self.symbols.get_space_id() if x == ' ' else self.symbols.get_id(x) for x in text])
-
         indices = []
         values = []
 
@@ -82,7 +76,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     config = Config(args.config)
-    data = DataSet(config.train_input, config.sym_file, config.feature_size,
+    data = DataSet(config.train_input, config.feature_size,
                    batch_size=config.batch_size, epochs=1)
     next_batch = data.get_batch_op()
     result = tf.add(next_batch[0], next_batch[0])
@@ -91,7 +85,7 @@ if __name__ == '__main__':
         while True:
             try:
                 mfcc, seq_len, labels, transcript = session.run(next_batch)
-                print(i, ' - ', mfcc.shape, ' - ', len(transcript))
+                print(i, ' - ', mfcc.shape, ' - ', labels[2], '-', len(transcript))
                 i += 1
             except tf.errors.OutOfRangeError:
                 print("End of dataset")  # ==> "End of dataset"

@@ -3,6 +3,7 @@ import os
 from configparser import ConfigParser, ExtendedInterpolation
 
 from logger import get_logger
+from symbols import Symbols
 
 logger = get_logger()
 
@@ -27,8 +28,8 @@ class Config(object):
         self.report_step = int(parameters['report_step'])
         self.num_gpus = int(parameters['num_gpus'])
 
-
-        self.batch_size = self.batch_size * ( self.num_gpus if self.num_gpus > 0 else 1)
+        self.batch_size = self.batch_size * \
+            (self.num_gpus if self.num_gpus > 0 else 1)
 
         self.punc_regex = parameters['punc_regex']
         self.network = parameters['network']
@@ -40,6 +41,7 @@ class Config(object):
 
         if 'sym_file' in parameters:
             self.sym_file = parameters['sym_file']
+            self.symbols = Symbols(self.sym_file)
 
         parameters = self.cfg['Train']
         if 'input' in parameters:
