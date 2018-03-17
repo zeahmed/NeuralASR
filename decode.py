@@ -70,6 +70,7 @@ if __name__ == '__main__':
     parser.add_argument("config", help="Configuration file.")
     args = parser.parse_args()
     config = Config(args.config, True)
-    dataTest = DataSet(config.test_input,
-                       config.feature_size,  batch_size=1, epochs=1)
+    config.batch_size = 1
+    config.epochs = 1
+    dataTest = DataSet(config.test_input, config)
     decode(dataTest, config)

@@ -19,6 +19,8 @@ class Config(object):
         self.numcep = int(parameters['numcep'])
         self.numcontext = int(parameters['numcontext']
                               ) if 'numcontext' in parameters else 0
+        self.rand_shift = int(
+            parameters['rand_shift']) if 'rand_shift' in parameters else 0
         self.feature_size = (2 * self.numcontext + 1) * self.numcep
         self.batch_size = int(parameters['batch_size'])
         self.epochs = int(parameters['epochs'])
@@ -65,6 +67,7 @@ class Config(object):
         config_str += ('samplerate=%d\n' % self.samplerate)
         config_str += ('numcep=%d\n' % self.numcep)
         config_str += ('numcontext=%d\n' % self.numcontext)
+        config_str += ('rand_shift=%d\n' % self.rand_shift)
         config_str += ('batch_size=%d\n' % self.batch_size)
         config_str += ('epochs=%d\n' % self.epochs)
         config_str += ('learningrate=%f\n' % self.learningrate)
