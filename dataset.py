@@ -24,7 +24,6 @@ class DataSet:
                       for x in self.X]
 
     def augment_mfcc(self, mfcc):
-        print(mfcc.shape)
         r = np.random.randint(self.config.rand_shift * -
                               1, self.config.rand_shift)
         mfcc = np.roll(mfcc, r, axis=0)
@@ -32,7 +31,6 @@ class DataSet:
             mfcc = mfcc[r:, :]
         elif r < 0:
             mfcc = mfcc[:r, :]
-        print(mfcc.shape)
         return mfcc
 
     def load_pkl(self, pklfilename):
