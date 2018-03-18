@@ -24,23 +24,24 @@ class DataSet:
                       for x in self.X]
 
     def augment_mfcc(self, mfcc):
-        r = np.random.randint(self.config.rand_shift*-
+        print(mfcc.shape)
+        r = np.random.randint(self.config.rand_shift * -
                               1, self.config.rand_shift)
         mfcc = np.roll(mfcc, r, axis=0)
         if r > 0:
-            mfcc[:r, :] = 0
+            mfcc = mfcc[r:, :]
         elif r < 0:
-            mfcc[r:, :] = 0
+            mfcc = mfcc[:r, :]
+        print(mfcc.shape)
         return mfcc
 
     def load_pkl(self, pklfilename):
         with open(pklfilename, 'rb') as input:
             audiosample = pickle.load(input)
-        seq_len = np.asarray(audiosample.mfcc.shape[0], dtype=np.int32)
-
         if self.config.rand_shift > 0:
-            mfcc = self.augment_mfcc(audiosample.mfcc)
-        return mfcc, audiosample.labels, seq_len, audiosample.transcription
+            audiosample.mfcc = self.augment_mfcc(audiosample.mfcc)
+        seq_len = np.asarray(audiosample.mfcc.shape[0], dtype=np.int32)
+        return audiosample.mfcc, audiosample.labels, seq_len, audiosample.transcription
 
     def get_batch_op(self, perform_shuffle=False):
         dataset = tf.data.Dataset.from_tensor_slices(self.X)
@@ -52,7 +53,7 @@ class DataSet:
         iterator = dataset.make_one_shot_iterator()
         batch_features, labels, seq_len, original_transcript = iterator.get_next()
 
-        indices, values, dense_shape = tf.py_func(self.sparse_tuple_from, [labels], [
+        indices, values, dense_shape = tf.py_func(self.sparse_tuple_from, [labels, original_transcript], [
                                                   tf.int64, tf.int32, tf.int64])
         batch_transcript = tf.SparseTensor(
             indices=indices, values=values, dense_shape=dense_shape)
@@ -67,13 +68,14 @@ class DataSet:
     def get_num_of_sample(self):
         return len(self.X)
 
-    def sparse_tuple_from(self, sequences):
+    def sparse_tuple_from(self, sequences, transcripts):
         indices = []
         values = []
 
         for n, seq in enumerate(sequences):
-            indices.extend(zip([n] * len(seq), range(len(seq))))
-            values.extend(seq)
+            l = len(transcripts[n])
+            indices.extend(zip([n] * l, range(l)))
+            values.extend(seq[:l])
 
         indices = np.asarray(indices, dtype=np.int64)
         values = np.asarray(values, dtype=np.int32)
@@ -100,7 +102,7 @@ if __name__ == '__main__':
             try:
                 mfcc, seq_len, labels, transcript = session.run(next_batch)
                 print(i, ' - ', mfcc.shape, ' - ',
-                      labels[2], '-', len(transcript))
+                      labels[0], '-', transcript)
                 i += 1
             except tf.errors.OutOfRangeError:
                 print("End of dataset")  # ==> "End of dataset"
