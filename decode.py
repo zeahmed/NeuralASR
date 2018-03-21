@@ -47,8 +47,8 @@ def decode(dataTest, config):
             t0 = time.time()
             output, valid_loss_val,  valid_mean_ler_value, Original_transcript = sess.run(
                 [model, loss, mean_ler, O], feed_dict={is_training: False})
-            logger.info('Valid: avg_cost = %.4f' % (valid_loss_val) +
-                        ', avg_ler = %.4f' % (valid_mean_ler_value))
+            logger.info('Valid: batch_cost = %.4f' % (valid_loss_val) +
+                        ', batch_ler = %.4f' % (valid_mean_ler_value))
             metrics['test_time_sec'] = metrics['test_time_sec'] + \
                 (time.time() - t0)
             metrics['avg_loss'] += valid_loss_val
@@ -72,5 +72,6 @@ if __name__ == '__main__':
     config = Config(args.config, True)
     config.batch_size = 1
     config.epochs = 1
+    config.rand_shift = 0
     dataTest = DataSet(config.test_input, config)
     decode(dataTest, config)
