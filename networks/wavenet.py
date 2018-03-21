@@ -53,58 +53,6 @@ def constant(name, shape, value=0, dtype=tf.float32, summary=False, regularizer=
     return x
 
 
-def batch_norm(out, dim, is_training):
-    out_shape = out.get_shape()
-
-    beta = constant('beta', dim)
-    gamma = constant('gamma', dim, value=1)
-
-    # offset, scale parameter ( for inference )
-    mean_running = constant('mean', dim, trainable=False)
-    variance_running = constant('variance', dim, value=1, trainable=False)
-
-    fused_eps = 1e-5
-    # use fused batch norm if ndims in [2, 3, 4]
-    if out_shape.ndims in [2, 3, 4]:
-        # add HW dims if necessary, fused_batch_norm requires shape to be NHWC
-        if out_shape.ndims == 2:
-            out = tf.expand_dims(out, axis=1)
-            out = tf.expand_dims(out, axis=2)
-        elif out_shape.ndims == 3:
-            out = tf.expand_dims(out, axis=2)
-
-        out, mean, variance = tf.cond(
-            is_training,
-            lambda: tf.nn.fused_batch_norm(out, gamma, beta, epsilon=fused_eps),
-            lambda: tf.nn.fused_batch_norm(
-                out, gamma, beta, mean=mean_running, variance=variance_running, epsilon=fused_eps, is_training=False),
-        )
-        # restore original shape if HW dims was added
-        if out_shape.ndims == 2:
-            out = tf.squeeze(out, axis=[1, 2])
-        elif out_shape.ndims == 3:
-            out = tf.squeeze(out, axis=2)
-
-    # fallback to naive batch norm
-    else:
-        mean, variance = tf.nn.moments(out, axes=list(range(len(out_shape) - 1)))
-        out = tf.cond(
-            is_training,
-            lambda: tf.nn.batch_normalization(
-                out, mean, variance, beta, gamma, fused_eps),
-            lambda: tf.nn.batch_normalization(
-                out, mean_running, variance_running, beta, gamma, fused_eps)
-        )
-
-    decay = 0.99
-    tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, mean_running.assign(
-        mean_running * decay + mean * (1 - decay)))
-    tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, variance_running.assign(
-        variance_running * decay + variance * (1 - decay)))
-
-    return out
-
-
 def conv1d(tensor, size, dim, stride=1, pad='SAME', act=None, bn=False, bias=False, name=None, is_training=None):
 
     with tf.variable_scope(name):
@@ -119,7 +67,18 @@ def conv1d(tensor, size, dim, stride=1, pad='SAME', act=None, bn=False, bias=Fal
         out = tf.nn.conv1d(tensor, w, stride=stride, padding=pad) + b
 
         if bn:
-            out = batch_norm(out, dim, is_training)
+            #out = batch_norm(out, dim, is_training)
+            #out = batch_norm(out, name, is_training)
+            out = tf.expand_dims(out, axis=2)
+            out = tf.contrib.layers.batch_norm(out,
+                                               decay=0.99,
+                                               center=True,
+                                               scale=True,
+                                               updates_collections=None,
+                                               data_format='NHWC',
+                                               zero_debias_moving_mean=True,
+                                               is_training=is_training)
+            out = tf.squeeze(out, axis=2)
 
         if act:
             out = act(out)
@@ -143,7 +102,18 @@ def dilated_conv1d(tensor, size, rate, dim, pad='SAME', act=None, bn=False, bias
                                   w, padding=pad, rate=rate) + b
 
         if bn:
-            out = batch_norm(out, dim, is_training)
+            #out = batch_norm(out, dim, is_training)
+            #out = batch_norm(out, name, is_training)
+            out = tf.expand_dims(out, axis=2)
+            out = tf.contrib.layers.batch_norm(out,
+                                               decay=0.99,
+                                               center=True,
+                                               scale=True,
+                                               updates_collections=None,
+                                               data_format='NHWC',
+                                               zero_debias_moving_mean=True,
+                                               is_training=is_training)
+            out = tf.squeeze(out, axis=2)
 
         if act:
             out = act(out)
@@ -161,22 +131,23 @@ def create_network(features, seq_len, num_classes, is_training):
     # residual block
     def res_block(tensor, size, rate, block, dim=num_dim):
 
-        with tf.variable_scope(name_or_scope='block_%d_%d' % (block, rate)):
+        name = 'block_%d_%d' % (block, rate)
+        with tf.variable_scope(name_or_scope=name):
 
             # filter convolution
             conv_filter = dilated_conv1d(
-                tensor, size=size, rate=rate, dim=dim, act=tf.nn.tanh, bn=True, name='conv_filter', is_training=is_training)
+                tensor, size=size, rate=rate, dim=dim, act=tf.nn.tanh, bn=True, name='conv_filter' + name, is_training=is_training)
 
             # gate convolution
             conv_gate = dilated_conv1d(
-                tensor, size=size, rate=rate, dim=dim, act=tf.nn.sigmoid, bn=True, name='conv_gate', is_training=is_training)
+                tensor, size=size, rate=rate, dim=dim, act=tf.nn.sigmoid, bn=True, name='conv_gate' + name, is_training=is_training)
 
             # output by gate multiplying
             out = conv_filter * conv_gate
 
             # final output
             out = conv1d(out, size=1, dim=dim, act=tf.nn.tanh, bn=True,
-                         name='conv_out', is_training=is_training)
+                         name='conv_out' + name, is_training=is_training)
 
             # residual and skip output
             return out + tensor, out

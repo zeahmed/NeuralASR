@@ -23,7 +23,7 @@ def include_context(audio_mfcc, numcontext, numcep):
 
 
 def convert_to_mfcc(wavfile, sr, numcontext, numcep):
-    audio, _ = librosa.load(wavfile, mono=True)
+    audio, _ = librosa.load(wavfile, mono=True, sr=sr)
     audio_mfcc = mfcc(audio, samplerate=sr, numcep=numcep)
     if numcontext > 0:
         audio_mfcc = include_context(audio_mfcc, numcontext, numcep)
