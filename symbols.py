@@ -1,17 +1,18 @@
 import os
+
 from logger import get_logger
 
 logger = get_logger()
 
 
 class Symbols(object):
-    def __init__(self, filename=None):
-        self.space = '<space>'
+    def __init__(self, label_context, filename=None):
+        self.label_context = label_context
         self.blank = '<blank>'
-        self.counter = 1
+        self.counter = 0
         self.filename = filename
-        self.sym_to_id = {self.space: 0}
-        self.id_2_sym = {0: self.space}
+        self.sym_to_id = {}
+        self.id_2_sym = {}
         if filename and os.path.exists(filename):
             logger.info('Reading output symbols from: ' + filename)
             with open(filename, 'r') as f:
@@ -30,14 +31,8 @@ class Symbols(object):
             self.counter += 1
         return self.sym_to_id[sym]
 
-    def insert_space(self):
-        return self.insert_sym(self.space)
-
     def insert_blank(self):
         return self.insert_sym(self.blank)
-
-    def get_space_id(self):
-        return self.get_id(self.space)
 
     def get_id(self, sym):
         return self.sym_to_id[sym]
@@ -49,10 +44,9 @@ class Symbols(object):
         return list(self.sym_to_id.values())
 
     def convert_to_str(self, l):
-        str_decoded = ''.join([self.get_sym(x) for x in l])
+        str_decoded = ''.join([self.get_sym(x)[self.label_context // 2] for x in l])
         str_decoded = str_decoded.replace(self.blank, '')
-        str_decoded = str_decoded.replace(self.space, ' ')
-        str_decoded = str_decoded.replace('  ', ' ')
+        str_decoded = str_decoded.replace('_', ' ')
         return str_decoded
 
     def write(self, filename=None):
