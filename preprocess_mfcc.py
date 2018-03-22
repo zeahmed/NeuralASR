@@ -14,13 +14,14 @@ from symbols import Symbols
 
 logger = get_logger()
 
-def update_symbols(sym, clean_transcription):
+
+def update_symbols(sym, clean_transcription, n=1):
     labels = []
-    for c in clean_transcription:
-        if c == ' ':
-           id = sym.insert_space()
-        else:
-           id = sym.insert_sym(c)
+    num_context = n // 2
+    padded_str = ('$' * num_context)
+    padded_transcript = padded_str + clean_transcription + padded_str
+    for i in range(len(padded_transcript) - num_context):
+        id = sym.insert_sym(padded_transcript[i:i + n])
         labels.append(id)
     return np.asarray(labels, dtype=np.int32)
 
@@ -39,7 +40,8 @@ def write_data(data, config, scp_file_name):
                     train_X[i], config.samplerate, config.numcontext, config.numcep, config.punc_regex, train_Y[i])
 
                 if len(clean_transcription) <= mfcc.shape[0]:
-                    labels = update_symbols(config.symbols, clean_transcription)
+                    labels = update_symbols(
+                        config.symbols, clean_transcription, config.label_context)
                     filename = os.path.basename(train_X[i]).replace(".wav", "")
                     filepath = os.path.join(config.mfcc_output, filename + ".pkl")
                     f.write(filename + ".pkl\n")
@@ -49,9 +51,6 @@ def write_data(data, config, scp_file_name):
                                             labels,
                                             clean_transcription)
                         pickle.dump(audio, output, pickle.HIGHEST_PROTOCOL)
-
-    config.symbols.insert_blank()
-    config.symbols.write()
 
 
 if __name__ == '__main__':
@@ -67,8 +66,8 @@ if __name__ == '__main__':
 
     dataTest = pd.read_csv(config.mfcc_input, header=None, sep=',')
     train_rows = int(dataTest.shape[0] * 0.8)
-    dataTrain = dataTest.iloc[:train_rows,:] #dataTest.sample(frac=0.8, random_state=200)
-    dataTest = dataTest.iloc[train_rows:,:] #dataTest.drop(dataTrain.index)
+    dataTrain = dataTest.iloc[:train_rows, :]
+    dataTest = dataTest.iloc[train_rows:, :]
 
     np.set_printoptions(suppress=True)
 
@@ -77,3 +76,6 @@ if __name__ == '__main__':
 
     test_scp_file = os.path.join(config.mfcc_output, "test.scp")
     write_data(dataTest, config, test_scp_file)
+
+    config.symbols.insert_blank()
+    config.write_symbols()

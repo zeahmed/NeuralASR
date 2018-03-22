@@ -9,7 +9,8 @@ logger = get_logger()
 
 
 class Config(object):
-    def __init__(self, configfile, isTest=False):
+    def __init__(self, configfile, isTraining=False):
+        self.isTraining = isTraining
         self.configfile = configfile
         logger.info('Reading configuration from: ' + configfile)
         self.cfg = ConfigParser(interpolation=ExtendedInterpolation())
@@ -29,6 +30,7 @@ class Config(object):
         self.start_step = int(parameters['start_step'])
         self.report_step = int(parameters['report_step'])
         self.num_gpus = int(parameters['num_gpus'])
+        self.label_context = int(parameters['label_context'])
 
         self.batch_size = self.batch_size * \
             (self.num_gpus if self.num_gpus > 0 else 1)
@@ -43,7 +45,11 @@ class Config(object):
 
         if 'sym_file' in parameters:
             self.sym_file = parameters['sym_file']
-            self.symbols = Symbols(self.sym_file)
+
+        if isTraining:
+            self.symbols = Symbols(self.label_context, self.sym_file)
+        else:
+            self.symbols = Symbols(self.label_context)
 
         parameters = self.cfg['Train']
         if 'input' in parameters:
@@ -75,6 +81,7 @@ class Config(object):
         config_str += ('start_step=%d\n' % self.start_step)
         config_str += ('report_step=%d\n' % self.report_step)
         config_str += ('num_gpus=%d\n' % self.num_gpus)
+        config_str += ('label_context=%d\n' % self.label_context)
         config_str += ('punc_regex=%s\n' % self.punc_regex)
         config_str += ('network=%s\n' % self.network)
         config_str += ('sym_file=%s\n' % self.sym_file)
@@ -83,6 +90,9 @@ class Config(object):
         config_str += ('mfcc_input=%s\n' % self.mfcc_input)
         config_str += ('mfcc_output=%s\n' % self.mfcc_output)
         logger.info(config_str)
+
+    def write_symbols(self):
+        self.symbols.write(self.sym_file)
 
     def write(self, filename):
         logger.info('Writing configuration to: ' + filename)
@@ -94,9 +104,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Read data from featurized mfcc files.")
     parser.add_argument("config", help="Configuration file.")
-    parser.add_argument("-t", "--isTest", required=False, default=False,
+    parser.add_argument("-t", "--isTraining", required=False, default=False,
                         help="Is configuration file for testing?")
     args = parser.parse_args()
 
-    config = Config(args.config, args.isTest)
+    config = Config(args.config, args.isTraining)
     config.print_config()

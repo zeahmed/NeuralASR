@@ -55,7 +55,7 @@ def decode(dataTest, config):
             metrics['avg_ler'] += valid_mean_ler_value
             str_decoded = convert_2_str(output, config.symbols)
             logger.info('Decoded: ' + str_decoded)
-            logger.info('Original: ' + Original_transcript[0].decode('utf-8'))
+            logger.info('Original: ' + Original_transcript[0].decode('utf-8').replace('_',' '))
         except tf.errors.OutOfRangeError:
             logger.info("Finished Decoding!!!")
             break

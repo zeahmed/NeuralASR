@@ -37,7 +37,7 @@ def read_label_text(txtfile, punc_regex):
 
     transcription = transcription.strip().lower()
     clean_transcription = re.sub(punc_regex, '', transcription)
-    clean_transcription = clean_transcription.replace('  ', ' ')
+    clean_transcription = clean_transcription.replace('  ', ' ').replace(' ', '_')
     return clean_transcription
 
 

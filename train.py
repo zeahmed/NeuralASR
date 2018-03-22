@@ -101,7 +101,7 @@ if __name__ == '__main__':
     parser.add_argument("config", help="Configuration file.")
     args = parser.parse_args()
 
-    config = Config(args.config)
+    config = Config(args.config, isTraining=True)
     dataTrain = DataSet(config.train_input, config)
     dataValid = None
     if config.test_input:
