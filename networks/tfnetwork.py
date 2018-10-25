@@ -9,7 +9,7 @@ from .network import Network
 
 
 class TensorFlowNetwork(Network):
-    def __init__(self, config, fortraining=True):
+    def __init__(self, config, fortraining=False):
         Network.__init__(self)
         self.config = config
         num_classes=config.symbols.counter
@@ -23,11 +23,10 @@ class TensorFlowNetwork(Network):
         self.Y = tf.sparse_placeholder(tf.int32, name="Y")
 
         if fortraining:
+            self.logger.info('Initializing network for training.')
             self.optimizer, self.loss, self.mean_ler = self.setup_training_network(self.X, self.Y, self.T, num_classes, num_gpus, learningrate, self.is_training)
-            self.write_config()
-            self.config.symbols.write(os.path.join(
-                self.config.model_dir, os.path.basename(self.config.sym_file)))
         else:
+            self.logger.info('Initializing network for inference.')
             self.logits = self.create_network(self.X, self.T, config.symbols.counter, self.is_training)
             self.loss = self.create_loss(self.logits, self.Y, self.T)
             self.model, self.log_prob = self.create_model(self.logits, self.T)
@@ -43,7 +42,12 @@ class TensorFlowNetwork(Network):
             step = self.global_step
         else:
             step = 1
-        self.load_model(step, self.sess, self.saver, self.config.model_dir)
+        self.load_checkpoint(step, self.sess, self.saver, self.config.model_dir)
+
+        if fortraining:
+            self.write_config()
+            self.config.symbols.write(os.path.join(
+                self.config.model_dir, os.path.basename(self.config.sym_file)))
 
     def create_loss(self, logits, labels, seq_len):
         return tf.reduce_mean(tf.nn.ctc_loss(labels, logits, seq_len))
@@ -134,7 +138,7 @@ class TensorFlowNetwork(Network):
         optimizer = adam_opt.apply_gradients(grads)
         return optimizer, l, mean_ler
 
-    def load_model(self, start_epoch, sess, saver, model_dir):
+    def load_checkpoint(self, start_epoch, sess, saver, model_dir):
         if start_epoch > 0:
             self.logger.info("Restoring checkpoint: " + model_dir)
             model_file = tf.train.latest_checkpoint(model_dir)
@@ -154,11 +158,11 @@ class TensorFlowNetwork(Network):
         else:
             self.config.write(model_config)
 
-    def save_step(self):
+    def save_checkpoint(self):
         self.saver.save(self.sess, os.path.join(self.config.model_dir, 'model'),
                 global_step=self.global_step)
 
-    def validation_step(self, mfccs, labels, seq_len):
+    def validate(self, mfccs, labels, seq_len):
         feed_dict={self.is_training: False, self.X: mfccs, self.Y: labels, self.T: seq_len}
         return self.sess.run([self.loss, self.mean_ler], feed_dict=feed_dict)
 
@@ -166,11 +170,11 @@ class TensorFlowNetwork(Network):
         feed_dict={self.is_training: False, self.X: mfccs, self.Y: labels, self.T: seq_len}
         return self.sess.run([self.model, self.loss, self.mean_ler], feed_dict=feed_dict)
 
-    def decode_step(self, mfccs, seq_len):
+    def decode(self, mfccs, seq_len):
         feed_dict={self.is_training: False, self.X: mfccs, self.T: seq_len}
         return self.sess.run(self.model, feed_dict=feed_dict)
 
-    def train_step(self, mfccs, labels, seq_len):
+    def train(self, mfccs, labels, seq_len):
         self.global_step += 1
         feed_dict={self.is_training: True, self.X: mfccs, self.Y: labels, self.T: seq_len}
         _, loss_val, mean_ler_value = self.sess.run(

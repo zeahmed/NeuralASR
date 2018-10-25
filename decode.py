@@ -14,7 +14,7 @@ def decode(dataTest, config):
     logger.info('Batch Dimensions: ' + str(dataTest.get_feature_shape()))
     logger.info('Label Dimensions: ' + str(dataTest.get_label_shape()))
 
-    network = config.load_network()
+    network = config.load_network(fortraining=False)
 
     global_step = 0
     metrics = {'test_time_sec': 0, 'avg_loss': 0, 'avg_ler': 0}

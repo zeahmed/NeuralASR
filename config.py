@@ -68,11 +68,11 @@ class Config(object):
             raise ValueError(
                 "Missing 'test_input' in configuration file: " + configfile)
     
-    def load_network(self):
+    def load_network(self,fortraining=False):
         package = self.network.split('.')
         classname = package[-1]
         module = importlib.import_module('.'.join(package[:-1]))
-        return getattr(module, classname)(self, fortraining=False)
+        return getattr(module, classname)(self, fortraining=fortraining)
 
     def print_config(self):
         config_str = '\n'

@@ -2,7 +2,7 @@ import tensorflow as tf
 from .tfnetwork import TensorFlowNetwork
 
 class LstmCTCNet(TensorFlowNetwork):
-    def __init__(self, config, fortraining=True):
+    def __init__(self, config, fortraining=False):
         TensorFlowNetwork.__init__(self, config, fortraining)
 
     def create_network(self, features, seq_len, num_classes, is_training):

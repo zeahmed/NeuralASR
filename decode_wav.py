@@ -10,9 +10,9 @@ from utils import compute_mfcc_and_read_transcription
 logger = get_logger()
 
 def decode(config, mfcc, seq_len):
-    network = config.load_network()
+    network = config.load_network(fortraining=False)
 
-    output = network.decode_wav(mfcc, seq_len)
+    output = network.decode(mfcc, seq_len)
     str_decoded = convert_2_str(output, config.symbols)
     logger.info('Decoded: ' + str_decoded)
 
