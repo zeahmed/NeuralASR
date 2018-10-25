@@ -35,7 +35,11 @@ def write_data(data, config, scp_file_name):
     with open(scp_file_name, 'w') as f:
         for i in range(len(train_X)):
             logger.info(train_X[i])
-            if os.path.exists(train_X[i]) and os.path.exists(train_Y[i]):
+            if not os.path.exists(train_X[i]):
+                logger.warn(train_X[i] + ' does not exist.')
+            elif not os.path.exists(train_Y[i]):
+                logger.warn(train_Y[i] + ' does not exist.')
+            else:
                 mfcc, clean_transcription = compute_mfcc_and_read_transcription(
                     train_X[i], config.samplerate, config.numcontext, config.numcep, config.punc_regex, train_Y[i])
 

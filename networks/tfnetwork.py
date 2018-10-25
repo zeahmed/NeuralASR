@@ -9,23 +9,41 @@ from .network import Network
 
 
 class TensorFlowNetwork(Network):
-    def __init__(self, dataTrain, datavalid, config):
+    def __init__(self, config, fortraining=True):
         Network.__init__(self)
-        self.dataTrain = dataTrain
-        self.datavalid = datavalid
         self.config = config
         num_classes=config.symbols.counter
         num_gpus=config.num_gpus
         learningrate=config.learningrate
         tf.set_random_seed(1)
-        self.is_training = tf.placeholder(tf.bool)
+        self.is_training = tf.placeholder(tf.bool, name="is_training")
 
-        if datavalid:
-            X, T, Y, _ = tf.cond(self.is_training, lambda: dataTrain.get_batch_op(),
-                                lambda: datavalid.get_batch_op())
+        self.X = tf.placeholder(tf.float32,shape = [None, None, config.feature_size], name="X")
+        self.T = tf.placeholder(tf.int32,shape=[None], name="T")
+        self.Y = tf.sparse_placeholder(tf.int32, name="Y")
+
+        if fortraining:
+            self.optimizer, self.loss, self.mean_ler = self.setup_training_network(self.X, self.Y, self.T, num_classes, num_gpus, learningrate, self.is_training)
+            self.write_config()
+            self.config.symbols.write(os.path.join(
+                self.config.model_dir, os.path.basename(self.config.sym_file)))
         else:
-            X, T, Y, _ = dataTrain.get_batch_op()
-        self.optimizer, self.loss, self.mean_ler = self.setup_training_network(X, Y, T, num_classes, num_gpus, learningrate, self.is_training)
+            self.logits = self.create_network(self.X, self.T, config.symbols.counter, self.is_training)
+            self.loss = self.create_loss(self.logits, self.Y, self.T)
+            self.model, self.log_prob = self.create_model(self.logits, self.T)
+            self.mean_ler = self.create_metric(self.model, self.Y)
+
+        init = tf.global_variables_initializer()
+        self.saver = tf.train.Saver()
+        self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
+        self.sess.run(init)
+
+        self.global_step = self.config.start_step
+        if fortraining:
+            step = self.global_step
+        else:
+            step = 1
+        self.load_model(step, self.sess, self.saver, self.config.model_dir)
 
     def create_loss(self, logits, labels, seq_len):
         return tf.reduce_mean(tf.nn.ctc_loss(labels, logits, seq_len))
@@ -136,44 +154,25 @@ class TensorFlowNetwork(Network):
         else:
             self.config.write(model_config)
 
-    def train(self):
-        init = tf.global_variables_initializer()
-        saver = tf.train.Saver()
-        with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
-            sess.run(init)
+    def save_step(self):
+        self.saver.save(self.sess, os.path.join(self.config.model_dir, 'model'),
+                global_step=self.global_step)
 
-            global_step = self.config.start_step
-            self.load_model(global_step, sess, saver, self.config.model_dir)
-            self.write_config()
-            self.config.symbols.write(os.path.join(
-                self.config.model_dir, os.path.basename(self.config.sym_file)))
+    def validation_step(self, mfccs, labels, seq_len):
+        feed_dict={self.is_training: False, self.X: mfccs, self.Y: labels, self.T: seq_len}
+        return self.sess.run([self.loss, self.mean_ler], feed_dict=feed_dict)
 
-            metrics = {'train_time_sec': 0, 'avg_loss': 0, 'avg_ler': 0}
-            # dataTrain.get_num_of_sample() // dataTrain.batch_size
-            report_step = self.config.report_step
-            while True:
-                global_step += 1
-                try:
-                    t0 = time.time()
-                    _, loss_val, mean_ler_value = sess.run(
-                        [self.optimizer, self.loss, self.mean_ler], feed_dict={self.is_training: True})
-                    metrics['train_time_sec'] += (time.time() - t0)
-                    metrics['avg_loss'] += loss_val
-                    metrics['avg_ler'] += mean_ler_value
-                except tf.errors.OutOfRangeError:
-                    break
+    def evaluate(self, mfccs, labels, seq_len):
+        feed_dict={self.is_training: False, self.X: mfccs, self.Y: labels, self.T: seq_len}
+        return self.sess.run([self.model, self.loss, self.mean_ler], feed_dict=feed_dict)
 
-                if global_step % report_step == 0:
-                    saver.save(sess, os.path.join(self.config.model_dir, 'model'),
-                            global_step=global_step)
-                    self.logger.info('Step: %04d' % (global_step) + ', cost = %.4f' %
-                                (metrics['avg_loss'] / report_step) + ', ler = %.4f' % (metrics['avg_ler'] / report_step) +
-                                ', time = %.4f' % (metrics['train_time_sec']))
-                    metrics['avg_loss'] = 0
-                    metrics['avg_ler'] = 0
-                    if self.datavalid:
-                        valid_loss_val,  valid_mean_ler_value = sess.run(
-                            [self.loss, self.mean_ler], feed_dict={self.is_training: False})
-                        self.logger.info('Valid: cost = %.4f' % (valid_loss_val) +
-                                    ', ler = %.4f' % (valid_mean_ler_value))
-            self.logger.info("Finished training!!!")
+    def decode_step(self, mfccs, seq_len):
+        feed_dict={self.is_training: False, self.X: mfccs, self.T: seq_len}
+        return self.sess.run(self.model, feed_dict=feed_dict)
+
+    def train_step(self, mfccs, labels, seq_len):
+        self.global_step += 1
+        feed_dict={self.is_training: True, self.X: mfccs, self.Y: labels, self.T: seq_len}
+        _, loss_val, mean_ler_value = self.sess.run(
+            [self.optimizer, self.loss, self.mean_ler], feed_dict=feed_dict)
+        return loss_val, mean_ler_value

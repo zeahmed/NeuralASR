@@ -1,4 +1,5 @@
 import argparse
+import importlib
 import os
 from configparser import ConfigParser, ExtendedInterpolation
 
@@ -6,7 +7,6 @@ from logger import get_logger
 from symbols import Symbols
 
 logger = get_logger()
-
 
 class Config(object):
     def __init__(self, configfile, isTraining=False):
@@ -67,6 +67,12 @@ class Config(object):
         elif not self.train_input:
             raise ValueError(
                 "Missing 'test_input' in configuration file: " + configfile)
+    
+    def load_network(self):
+        package = self.network.split('.')
+        classname = package[-1]
+        module = importlib.import_module('.'.join(package[:-1]))
+        return getattr(module, classname)(self, fortraining=False)
 
     def print_config(self):
         config_str = '\n'

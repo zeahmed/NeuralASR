@@ -1,40 +1,19 @@
 import argparse
-import os
-import time
 
 import numpy as np
-import tensorflow as tf
-from utils import compute_mfcc_and_read_transcription
 
-from common import convert_2_str, load_model
+from common import convert_2_str
 from config import Config
 from logger import get_logger
-from symbols import Symbols
+from utils import compute_mfcc_and_read_transcription
 
 logger = get_logger()
 
+def decode(config, mfcc, seq_len):
+    network = config.load_network()
 
-def decode(model_dir, mfcc, sym, seq_len):
-    network = __import__('networks.' + config.network,
-                         fromlist=('create_network', 'model'))
-
-    X = tf.placeholder(tf.float32, [1, None, mfcc.shape[2]])
-    Y = tf.sparse_placeholder(tf.int32)
-    T = tf.placeholder(tf.int32, [None])
-    is_training = tf.placeholder(tf.bool)
-
-    logits = network.create_network(
-        X, T, sym.counter, is_training)
-    model, log_prob = network.model(logits, T)
-
-    init = tf.global_variables_initializer()
-    saver = tf.train.Saver()
-    sess = tf.Session()
-    sess.run(init)
-    load_model(1, sess, saver, model_dir)
-    output = sess.run(model, feed_dict={
-                      X: mfcc, T: seq_len, is_training: False})
-    str_decoded = convert_2_str(output, sym)
+    output = network.decode_wav(mfcc, seq_len)
+    str_decoded = convert_2_str(output, config.symbols)
     logger.info('Decoded: ' + str_decoded)
 
 
@@ -49,5 +28,5 @@ if __name__ == '__main__':
     mfcc = compute_mfcc_and_read_transcription(
         args.input, config.samplerate, config.numcontext, config.numcep)
     mfcc = np.expand_dims(mfcc, axis=0)
-    seq_len = np.asarray(mfcc.shape[0], dtype=np.int32)
-    decode(config.model_dir, mfcc, config.symbols, [seq_len])
+    seq_len = np.asarray(mfcc.shape[1], dtype=np.int32)
+    decode(config, mfcc, [seq_len])

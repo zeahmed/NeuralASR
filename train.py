@@ -4,10 +4,6 @@ import sys
 import time
 from datetime import datetime
 
-import numpy as np
-import pandas as pd
-import tensorflow as tf
-
 from config import Config
 from dataset import DataSet
 from logger import get_logger
@@ -18,11 +14,35 @@ def train_model(dataTrain, datavalid, config):
     logger.info('Batch Dimensions: ' + str(dataTrain.get_feature_shape()))
     logger.info('Label Dimensions: ' + str(dataTrain.get_label_shape()))
 
-    package = config.network.split('.')
-    classname = package[-1]
-    module = __import__('.'.join(package[:-1]), fromlist=[classname])
-    network = getattr(module, classname)(dataTrain, datavalid, config)
-    network.train()
+    network = config.load_network()
+
+    metrics = {'train_time_sec': 0, 'avg_loss': 0, 'avg_ler': 0}
+    for epoch in range(config.epochs):
+        while dataTrain.has_more_batches():
+            t0 = time.time()
+            mfccs, labels, seq_len, _ = dataTrain.get_next_batch()
+            loss, mean_ler = network.train_step(mfccs, labels, seq_len)
+            metrics['train_time_sec'] += (time.time() - t0)
+            metrics['avg_loss'] += loss
+            metrics['avg_ler'] += mean_ler
+
+            if network.global_step % config.report_step == 0:
+                network.save_step()
+                logger.info('Step: %04d' % (network.global_step) + ', cost = %.4f' %
+                            (metrics['avg_loss'] / config.report_step) + ', ler = %.4f' % (metrics['avg_ler'] / config.report_step) +
+                            ', time = %.4f' % (metrics['train_time_sec']))
+                metrics['avg_loss'] = 0
+                metrics['avg_ler'] = 0
+                if datavalid:
+                    if not datavalid.has_more_batches():
+                        datavalid.reset_epoch()
+                    mfccs, labels, seq_len, _ = datavalid.get_next_batch()
+                    valid_loss_val, valid_mean_ler_value = network.validation_step( mfccs, labels, seq_len)
+                    logger.info('Valid: cost = %.4f' % (valid_loss_val) +
+                                ', ler = %.4f' % (valid_mean_ler_value))
+        dataTrain.reset_epoch()
+    
+    logger.info("Finished training!!!")
 
 
 if __name__ == '__main__':

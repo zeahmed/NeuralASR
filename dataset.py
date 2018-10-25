@@ -4,8 +4,6 @@ import pickle
 import sys
 
 import numpy as np
-import pandas as pd
-import tensorflow as tf
 
 from audiosample import AudioSample
 from config import Config
@@ -13,11 +11,9 @@ from config import Config
 
 class DataSet:
     def __init__(self, filename, config):
-        self.feature_size = config.feature_size
         self.filename = filename
-        self.batch_size = config.batch_size
-        self.epochs = config.epochs
         self.config = config
+        self.index = 0
         with open(self.filename, 'r') as f:
             self.X = f.readlines()
             self.X = [os.path.join(os.path.dirname(self.filename), x.strip())
@@ -41,27 +37,40 @@ class DataSet:
         seq_len = np.asarray(audiosample.mfcc.shape[0], dtype=np.int32)
         return audiosample.mfcc, audiosample.labels, seq_len, audiosample.transcription
 
-    def get_batch_op(self, perform_shuffle=False):
-        dataset = tf.data.Dataset.from_tensor_slices(self.X)
-        dataset = dataset.map(lambda pklfilename: tuple(tf.py_func(
-            self.load_pkl, [pklfilename], [tf.float32, tf.int32, tf.int32, tf.string])))
-        dataset = dataset.repeat(self.epochs)
-        dataset = dataset.padded_batch(self.batch_size, padded_shapes=(
-            [None, self.feature_size], [None], [], []))
-        iterator = dataset.make_one_shot_iterator()
-        batch_features, labels, seq_len, original_transcript = iterator.get_next()
+    def reset_epoch(self):
+        self.index = 0
 
-        indices, values, dense_shape = tf.py_func(self.sparse_tuple_from, [labels, original_transcript], [
-                                                  tf.int64, tf.int32, tf.int64])
-        batch_transcript = tf.SparseTensor(
-            indices=indices, values=values, dense_shape=dense_shape)
-        return batch_features, seq_len, batch_transcript, original_transcript
+    def has_more_batches(self):
+        return self.index < len(self.X)
+
+    def get_next_batch(self):
+        mfccs, labels, seq_lens, transcripts = self.load_pkl(self.X[self.index])
+        mfccs = [mfccs]
+        labels = [labels]
+        seq_lens = [seq_lens]
+        transcripts = [transcripts]
+        self.index += 1
+        max_time = mfccs[0].shape[0]
+        while self.index % self.config.batch_size > 0 and self.index < len(self.X):
+            mfcc, label, seq_len, transcript = self.load_pkl(self.X[self.index])
+            if max_time < mfcc.shape[0]:
+                max_time = mfcc.shape[0]
+            self.index += 1
+            mfccs += [mfcc]
+            labels += [label]
+            seq_lens += [seq_len]
+            transcripts += [transcript]
+
+        for i in range(len(mfccs)):
+            mfccs[i] = np.pad(mfccs[i], ((0,max_time-mfccs[i].shape[0]),(0,0)), 'constant', constant_values=(0, 0))
+        mfccs = np.asarray(mfccs)
+        return np.asarray(mfccs), self.sparse_tuple_from(labels, transcripts), seq_lens, transcripts
 
     def get_feature_shape(self):
-        return [self.batch_size, None, self.feature_size]
+        return [self.config.batch_size, None, self.config.feature_size]
 
     def get_label_shape(self):
-        return [self.batch_size, None, 1]
+        return [self.config.batch_size, None, 1]
 
     def get_num_of_sample(self):
         return len(self.X)
@@ -92,16 +101,9 @@ if __name__ == '__main__':
     config = Config(args.config)
     config.epochs = 1
     data = DataSet(config.train_input, config)
-    next_batch = data.get_batch_op()
-    result = tf.add(next_batch[0], next_batch[0])
-    with tf.Session() as session:
-        i = 0
-        while True:
-            try:
-                mfcc, seq_len, labels, transcript = session.run(next_batch)
-                print(i, ' - ', mfcc.shape, ' - ',
-                      labels[0], '-', transcript)
-                i += 1
-            except tf.errors.OutOfRangeError:
-                print("End of dataset")  # ==> "End of dataset"
-                break
+    i = 0
+    while data.has_more_batches():
+        mfccs, labels, seq_len, transcripts = data.get_next_batch()
+        print(i, ' - ', mfccs.shape, ' - ',
+                      labels[0], '-', transcripts)
+        i += 1
