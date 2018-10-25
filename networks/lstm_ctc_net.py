@@ -1,5 +1,7 @@
 import tensorflow as tf
+
 from .tfnetwork import TensorFlowNetwork
+
 
 class LstmCTCNet(TensorFlowNetwork):
     def __init__(self, config, fortraining=False):
@@ -13,11 +15,12 @@ class LstmCTCNet(TensorFlowNetwork):
         num_layers = 3
 
         cells = [tf.contrib.rnn.LSTMCell(num_hidden, state_is_tuple=True)
-                for i in range(num_layers)]
+                 for i in range(num_layers)]
         stack = tf.contrib.rnn.MultiRNNCell(cells,
                                             state_is_tuple=True)
 
-        outputs, _ = tf.nn.dynamic_rnn(stack, features, seq_len, dtype=tf.float32)
+        outputs, _ = tf.nn.dynamic_rnn(
+            stack, features, seq_len, dtype=tf.float32)
 
         shape = tf.shape(features)
         batch_s, _ = shape[0], shape[1]
@@ -25,9 +28,10 @@ class LstmCTCNet(TensorFlowNetwork):
         outputs = tf.reshape(outputs, [-1, num_hidden])
 
         W = tf.get_variable(
-            'W', [num_hidden, num_classes], initializer = tf.contrib.layers.xavier_initializer(uniform=False))
+            'W', [num_hidden, num_classes], initializer=tf.contrib.layers.xavier_initializer(uniform=False))
 
-        b = tf.get_variable('b', [num_classes], initializer = tf.constant_initializer(0.))
+        b = tf.get_variable('b', [num_classes],
+                            initializer=tf.constant_initializer(0.))
 
         # Doing the affine projection
         logits = tf.matmul(outputs, W) + b
