@@ -1,4 +1,4 @@
-# TFSpeechRecEngine: Tensorflow base Configurable End-to-End Speech Recognition Engine
+# NeuralASR: A nerual network based configurable End-to-End speech recognition engine
 
 This speech recognition engine has been created for quickly benchmarking different deep neural architectures. There are bunch of speech recognition systems available on the web that are based on tensorflow or other deep learning platforms. However, `TFSpeechRecEngine` is highly configurable in a sense that audio features, network definition, training and evaluation parameters can be defined at run-time. `TFSpeechRecEngine` supports training in parallel using multiple GPUs. The user can bring in any tensorflow implementations such as [DeepSpeech](https://github.com/mozilla/DeepSpeech), [WaveNet](https://github.com/buriburisuri/speech-to-text-wavenet)
  etc. to benchmark against their own implementation.
