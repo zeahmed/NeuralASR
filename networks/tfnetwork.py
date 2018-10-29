@@ -5,6 +5,8 @@ from abc import ABC, abstractmethod
 
 import tensorflow as tf
 
+from utils import sparse_tuple_from
+
 from .network import Network
 
 
@@ -109,7 +111,6 @@ class TensorFlowNetwork(Network):
 
         return [tf.stack(o, axis=0) for o in out_split]
 
-
     def setup_training_network(self, X, Y, T, num_classes, num_gpus, learningrate, is_training):
         adam_opt = tf.train.AdamOptimizer(
             learning_rate=learningrate)  # .minimize(loss)
@@ -162,11 +163,13 @@ class TensorFlowNetwork(Network):
         self.saver.save(self.sess, os.path.join(self.config.model_dir, 'model'),
                 global_step=self.global_step)
 
-    def validate(self, mfccs, labels, seq_len):
+    def validate(self, mfccs, labels, seq_len, transcripts):
+        labels = sparse_tuple_from(labels, transcripts)
         feed_dict={self.is_training: False, self.X: mfccs, self.Y: labels, self.T: seq_len}
         return self.sess.run([self.loss, self.mean_ler], feed_dict=feed_dict)
 
-    def evaluate(self, mfccs, labels, seq_len):
+    def evaluate(self, mfccs, labels, seq_len, transcripts):
+        labels = sparse_tuple_from(labels, transcripts)
         feed_dict={self.is_training: False, self.X: mfccs, self.Y: labels, self.T: seq_len}
         return self.sess.run([self.model, self.loss, self.mean_ler], feed_dict=feed_dict)
 
@@ -174,7 +177,8 @@ class TensorFlowNetwork(Network):
         feed_dict={self.is_training: False, self.X: mfccs, self.T: seq_len}
         return self.sess.run(self.model, feed_dict=feed_dict)
 
-    def train(self, mfccs, labels, seq_len):
+    def train(self, mfccs, labels, seq_len, transcripts):
+        labels = sparse_tuple_from(labels, transcripts)
         self.global_step += 1
         feed_dict={self.is_training: True, self.X: mfccs, self.Y: labels, self.T: seq_len}
         _, loss_val, mean_ler_value = self.sess.run(

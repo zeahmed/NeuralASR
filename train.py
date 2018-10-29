@@ -20,8 +20,8 @@ def train_model(dataTrain, datavalid, config):
     for epoch in range(config.epochs):
         while dataTrain.has_more_batches():
             t0 = time.time()
-            mfccs, labels, seq_len, _ = dataTrain.get_next_batch()
-            loss, mean_ler = network.train(mfccs, labels, seq_len)
+            mfccs, labels, seq_len, transcripts = dataTrain.get_next_batch()
+            loss, mean_ler = network.train(mfccs, labels, seq_len, transcripts)
             metrics['train_time_sec'] += (time.time() - t0)
             metrics['avg_loss'] += loss
             metrics['avg_ler'] += mean_ler
@@ -36,8 +36,8 @@ def train_model(dataTrain, datavalid, config):
                 if datavalid:
                     if not datavalid.has_more_batches():
                         datavalid.reset_epoch()
-                    mfccs, labels, seq_len, _ = datavalid.get_next_batch()
-                    valid_loss_val, valid_mean_ler_value = network.validate(mfccs, labels, seq_len)
+                    mfccs, labels, seq_len, transcripts = datavalid.get_next_batch()
+                    valid_loss_val, valid_mean_ler_value = network.validate(mfccs, labels, seq_len, transcripts)
                     logger.info('Valid: cost = %.4f' % (valid_loss_val) +
                                 ', ler = %.4f' % (valid_mean_ler_value))
         dataTrain.reset_epoch()

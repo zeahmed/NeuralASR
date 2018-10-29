@@ -64,7 +64,7 @@ class DataSet:
         for i in range(len(mfccs)):
             mfccs[i] = np.pad(mfccs[i], ((0,max_time-mfccs[i].shape[0]),(0,0)), 'constant', constant_values=(0, 0))
         mfccs = np.asarray(mfccs)
-        return np.asarray(mfccs), self.sparse_tuple_from(labels, transcripts), seq_lens, transcripts
+        return np.asarray(mfccs), labels, seq_lens, transcripts
 
     def get_feature_shape(self):
         return [self.config.batch_size, None, self.config.feature_size]
@@ -74,23 +74,6 @@ class DataSet:
 
     def get_num_of_sample(self):
         return len(self.X)
-
-    def sparse_tuple_from(self, sequences, transcripts):
-        indices = []
-        values = []
-
-        for n, seq in enumerate(sequences):
-            l = len(transcripts[n])
-            indices.extend(zip([n] * l, range(l)))
-            values.extend(seq[:l])
-
-        indices = np.asarray(indices, dtype=np.int64)
-        values = np.asarray(values, dtype=np.int32)
-        shape = np.asarray([len(sequences), np.asarray(
-            indices).max(0)[1] + 1], dtype=np.int64)
-
-        return indices, values, shape
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(

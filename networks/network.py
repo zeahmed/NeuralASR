@@ -24,3 +24,19 @@ class Network:
     @abstractmethod
     def setup_training_network(self, X, Y, T, num_classes, num_gpus, learningrate, is_training):
         pass
+    
+    @abstractmethod
+    def validate(self, mfccs, labels, seq_len, transcripts):
+        pass
+
+    @abstractmethod
+    def evaluate(self, mfccs, labels, seq_len, transcripts):
+        pass
+
+    @abstractmethod
+    def decode(self, mfccs, seq_len):
+        pass
+
+    @abstractmethod
+    def train(self, mfccs, labels, seq_len, transcripts):
+        pass

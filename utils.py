@@ -40,6 +40,21 @@ def read_label_text(txtfile, punc_regex):
     clean_transcription = clean_transcription.replace('  ', ' ').replace(' ', '_')
     return clean_transcription
 
+def sparse_tuple_from(sequences, transcripts):
+    indices = []
+    values = []
+
+    for n, seq in enumerate(sequences):
+        l = len(transcripts[n])
+        indices.extend(zip([n] * l, range(l)))
+        values.extend(seq[:l])
+
+    indices = np.asarray(indices, dtype=np.int64)
+    values = np.asarray(values, dtype=np.int32)
+    shape = np.asarray([len(sequences), np.asarray(
+        indices).max(0)[1] + 1], dtype=np.int64)
+
+    return indices, values, shape
 
 def compute_mfcc_and_read_transcription(wavfile, sr, numcontext, numcep, punc_regex=None, txtfile=None):
     audio_mfcc = convert_to_mfcc(wavfile, sr, numcontext, numcep)

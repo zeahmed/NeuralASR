@@ -21,9 +21,9 @@ def decode(dataTest, config):
     while dataTest.has_more_batches():
         global_step += 1
         t0 = time.time()
-        mfccs, labels, seq_len, Original_transcript = dataTest.get_next_batch()
+        mfccs, labels, seq_len, transcripts = dataTest.get_next_batch()
         output, valid_loss_val,  valid_mean_ler_value = network.evaluate(
-            mfccs, labels, seq_len)
+            mfccs, labels, seq_len, transcripts)
         logger.info('Valid: batch_cost = %.4f' % (valid_loss_val) +
                     ', batch_ler = %.4f' % (valid_mean_ler_value))
         metrics['test_time_sec'] = metrics['test_time_sec'] + \
@@ -32,7 +32,7 @@ def decode(dataTest, config):
         metrics['avg_ler'] += valid_mean_ler_value
         str_decoded = convert_2_str(output, config.symbols)
         logger.info('Decoded: ' + str_decoded)
-        logger.info('Original: ' + Original_transcript[0].replace('_', ' '))
+        logger.info('Original: ' + transcripts[0].replace('_', ' '))
 
     logger.info("Finished Decoding!!!")
     logger.info('Decoded Time = %.4fs, avg_loss = %.4f, avg_ler = %.4f' % (
