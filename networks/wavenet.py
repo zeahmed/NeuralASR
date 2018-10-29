@@ -118,7 +118,7 @@ class WaveNet(TensorFlowNetwork):
 
         return out
 
-    def create_network(self, features, seq_len, num_classes, is_training):
+    def create_network(self, features, labels, seq_len, num_classes, is_training):
         '''
         This network is similar to wavenet https://github.com/buriburisuri/speech-to-text-wavenet
         '''
@@ -169,4 +169,7 @@ class WaveNet(TensorFlowNetwork):
                                  name='conv_2', is_training=is_training)
 
         logits = tf.transpose(logits, (1, 0, 2))
-        return logits
+        loss = self.create_loss(logits, labels, seq_len)
+        model, prob = self.create_model(logits, seq_len)
+        ler = self.create_metric(model, labels)
+        return logits, loss, model, prob, ler

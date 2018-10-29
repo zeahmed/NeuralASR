@@ -7,7 +7,7 @@ class BiLstmCTCNet(TensorFlowNetwork):
     def __init__(self, config, fortraining=False):
         TensorFlowNetwork.__init__(self, config, fortraining)
 
-    def create_network(self, features, seq_len, num_classes, is_training):
+    def create_network(self, features, labels, seq_len, num_classes, is_training):
         '''
         Simple BiLSTM network
         '''
@@ -46,4 +46,7 @@ class BiLstmCTCNet(TensorFlowNetwork):
 
         # Time major
         logits = tf.transpose(logits, (1, 0, 2))
-        return logits
+        loss = self.create_loss(logits, labels, seq_len)
+        model, prob = self.create_model(logits, seq_len)
+        ler = self.create_metric(model, labels)
+        return logits, loss, model, prob, ler

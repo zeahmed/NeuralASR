@@ -29,10 +29,8 @@ class TensorFlowNetwork(Network):
             self.optimizer, self.loss, self.mean_ler = self.setup_training_network(self.X, self.Y, self.T, num_classes, num_gpus, learningrate, self.is_training)
         else:
             self.logger.info('Initializing network for inference.')
-            self.logits = self.create_network(self.X, self.T, config.symbols.counter, self.is_training)
-            self.loss = self.create_loss(self.logits, self.Y, self.T)
-            self.model, self.log_prob = self.create_model(self.logits, self.T)
-            self.mean_ler = self.create_metric(self.model, self.Y)
+            self.logits, self.loss, self.model, self.log_prob, self.mean_ler = \
+                self.create_network(self.X, self.Y, self.T, config.symbols.counter, self.is_training)
 
         init = tf.global_variables_initializer()
         self.saver = tf.train.Saver()
@@ -66,7 +64,7 @@ class TensorFlowNetwork(Network):
         return mean_ler
 
     @abstractmethod
-    def create_network(self, features, seq_len, num_classes, is_training):
+    def create_network(self, features, labels, seq_len, num_classes, is_training):
         pass
 
     def average_gradients(self, tower_grads):
@@ -117,27 +115,24 @@ class TensorFlowNetwork(Network):
         tower_grads = []
 
         def create_ops(X, Y, T):
-            logits = self.create_network(X, T, num_classes, is_training)
-            l = self.create_loss(logits, Y, T)
-            m, _ = self.create_model(logits, T)
-            ler = self.create_metric(m, Y)
-            grads = adam_opt.compute_gradients(l, colocate_gradients_with_ops=True)
+            _, loss, _, _, ler = self.create_network(X, Y, T, num_classes, is_training)
+            grads = adam_opt.compute_gradients(loss, colocate_gradients_with_ops=True)
 
             # Keep track of the gradients across all towers.
             tower_grads.append(grads)
-            return l, ler
+            return loss, ler
 
         if num_gpus <= 1:
-            l, mean_ler = create_ops(X=X, Y=Y, T=T)
+            loss, mean_ler = create_ops(X=X, Y=Y, T=T)
         else:
-            l, ler = self.make_parallel(
+            loss, ler = self.make_parallel(
                 create_ops, num_gpus=num_gpus, X=X, Y=Y, T=T)
-            l = tf.reduce_mean(l)
+            loss = tf.reduce_mean(loss)
             mean_ler = tf.reduce_mean(ler)
 
         grads = self.average_gradients(tower_grads)
         optimizer = adam_opt.apply_gradients(grads)
-        return optimizer, l, mean_ler
+        return optimizer, loss, mean_ler
 
     def load_checkpoint(self, start_epoch, sess, saver, model_dir):
         if start_epoch > 0:
