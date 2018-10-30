@@ -35,7 +35,8 @@ class DataSet:
         if self.config.rand_shift > 0:
             audiosample.mfcc = self.augment_mfcc(audiosample.mfcc)
         seq_len = np.asarray(audiosample.mfcc.shape[0], dtype=np.int32)
-        return audiosample.mfcc, audiosample.labels, seq_len, audiosample.transcription
+        labels_len = audiosample.labels.shape[0]
+        return audiosample.mfcc, audiosample.labels, seq_len, labels_len
 
     def reset_epoch(self):
         self.index = 0
@@ -44,27 +45,30 @@ class DataSet:
         return self.index < len(self.X)
 
     def get_next_batch(self):
-        mfccs, labels, seq_lens, transcripts = self.load_pkl(self.X[self.index])
+        mfccs, labels, seq_lens, labels_lens = self.load_pkl(
+            self.X[self.index])
         mfccs = [mfccs]
         labels = [labels]
         seq_lens = [seq_lens]
-        transcripts = [transcripts]
+        labels_lens = [labels_lens]
         self.index += 1
         max_time = mfccs[0].shape[0]
         while self.index % self.config.batch_size > 0 and self.index < len(self.X):
-            mfcc, label, seq_len, transcript = self.load_pkl(self.X[self.index])
+            mfcc, label, seq_len, labels_len = self.load_pkl(
+                self.X[self.index])
             if max_time < mfcc.shape[0]:
                 max_time = mfcc.shape[0]
             self.index += 1
             mfccs += [mfcc]
             labels += [label]
             seq_lens += [seq_len]
-            transcripts += [transcript]
+            labels_lens += [labels_len]
 
         for i in range(len(mfccs)):
-            mfccs[i] = np.pad(mfccs[i], ((0,max_time-mfccs[i].shape[0]),(0,0)), 'constant', constant_values=(0, 0))
+            mfccs[i] = np.pad(mfccs[i], ((0, max_time-mfccs[i].shape[0]),
+                                         (0, 0)), 'constant', constant_values=(0, 0))
         mfccs = np.asarray(mfccs)
-        return np.asarray(mfccs), labels, seq_lens, transcripts
+        return np.asarray(mfccs), labels, seq_lens, labels_lens
 
     def get_feature_shape(self):
         return [self.config.batch_size, None, self.config.feature_size]
@@ -74,6 +78,7 @@ class DataSet:
 
     def get_num_of_sample(self):
         return len(self.X)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -86,7 +91,7 @@ if __name__ == '__main__':
     data = DataSet(config.train_input, config)
     i = 0
     while data.has_more_batches():
-        mfccs, labels, seq_len, transcripts = data.get_next_batch()
+        mfccs, labels, seq_len, labels_len = data.get_next_batch()
         print(i, ' - ', mfccs.shape, ' - ',
-                      labels[0], '-', transcripts)
+              labels[0], '-', labels_len)
         i += 1

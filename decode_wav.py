@@ -9,6 +9,7 @@ from utils import compute_mfcc_and_read_transcription
 
 logger = get_logger()
 
+
 def decode(config, mfcc, seq_len):
     network = config.load_network(fortraining=False)
 

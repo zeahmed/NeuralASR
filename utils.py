@@ -40,12 +40,12 @@ def read_label_text(txtfile, punc_regex):
     clean_transcription = clean_transcription.replace('  ', ' ').replace(' ', '_')
     return clean_transcription
 
-def sparse_tuple_from(sequences, transcripts):
+def sparse_tuple_from(sequences):
     indices = []
     values = []
 
     for n, seq in enumerate(sequences):
-        l = len(transcripts[n])
+        l = len(seq)
         indices.extend(zip([n] * l, range(l)))
         values.extend(seq[:l])
 

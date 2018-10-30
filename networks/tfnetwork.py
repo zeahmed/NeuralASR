@@ -14,27 +14,31 @@ class TensorFlowNetwork(Network):
     def __init__(self, config, fortraining=False):
         Network.__init__(self)
         self.config = config
-        num_classes=config.symbols.counter
-        num_gpus=config.num_gpus
-        learningrate=config.learningrate
+        num_classes = config.symbols.counter
+        num_gpus = config.num_gpus
+        learningrate = config.learningrate
         tf.set_random_seed(1)
         self.is_training = tf.placeholder(tf.bool, name="is_training")
 
-        self.X = tf.placeholder(tf.float32,shape = [None, None, config.feature_size], name="X")
-        self.T = tf.placeholder(tf.int32,shape=[None], name="T")
+        self.X = tf.placeholder(
+            tf.float32, shape=[None, None, config.feature_size], name="X")
+        self.T = tf.placeholder(tf.int32, shape=[None], name="T")
         self.Y = tf.sparse_placeholder(tf.int32, name="Y")
 
         if fortraining:
             self.logger.info('Initializing network for training.')
-            self.optimizer, self.loss, self.mean_ler = self.setup_training_network(self.X, self.Y, self.T, num_classes, num_gpus, learningrate, self.is_training)
+            self.optimizer, self.loss, self.mean_ler = self.setup_training_network(
+                self.X, self.Y, self.T, num_classes, num_gpus, learningrate, self.is_training)
         else:
             self.logger.info('Initializing network for inference.')
             self.logits, self.loss, self.model, self.log_prob, self.mean_ler = \
-                self.create_network(self.X, self.Y, self.T, config.symbols.counter, self.is_training)
+                self.create_network(self.X, self.Y, self.T,
+                                    config.symbols.counter, self.is_training)
 
         init = tf.global_variables_initializer()
         self.saver = tf.train.Saver()
-        self.sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
+        self.sess = tf.Session(
+            config=tf.ConfigProto(allow_soft_placement=True))
         self.sess.run(init)
 
         self.global_step = self.config.start_step
@@ -42,7 +46,8 @@ class TensorFlowNetwork(Network):
             step = self.global_step
         else:
             step = 1
-        self.load_checkpoint(step, self.sess, self.saver, self.config.model_dir)
+        self.load_checkpoint(step, self.sess, self.saver,
+                             self.config.model_dir)
 
         if fortraining:
             self.write_config()
@@ -92,8 +97,9 @@ class TensorFlowNetwork(Network):
         for k, v in kwargs.items():
             if k in ('num_classes', 'is_training'):
                 in_splits[k] = [v] * num_gpus
-            elif k in ('Y'):
-                in_splits[k] = tf.sparse_split(sp_input=v, num_split=num_gpus, axis=0)
+            elif type(v) is tf.SparseTensor:
+                in_splits[k] = tf.sparse_split(
+                    sp_input=v, num_split=num_gpus, axis=0)
             else:
                 in_splits[k] = tf.split(v, num_gpus)
 
@@ -115,8 +121,10 @@ class TensorFlowNetwork(Network):
         tower_grads = []
 
         def create_ops(X, Y, T):
-            _, loss, _, _, ler = self.create_network(X, Y, T, num_classes, is_training)
-            grads = adam_opt.compute_gradients(loss, colocate_gradients_with_ops=True)
+            _, loss, _, _, ler = self.create_network(
+                X, Y, T, num_classes, is_training)
+            grads = adam_opt.compute_gradients(
+                loss, colocate_gradients_with_ops=True)
 
             # Keep track of the gradients across all towers.
             tower_grads.append(grads)
@@ -156,26 +164,29 @@ class TensorFlowNetwork(Network):
 
     def save_checkpoint(self):
         self.saver.save(self.sess, os.path.join(self.config.model_dir, 'model'),
-                global_step=self.global_step)
+                        global_step=self.global_step)
 
-    def validate(self, mfccs, labels, seq_len, transcripts):
-        labels = sparse_tuple_from(labels, transcripts)
-        feed_dict={self.is_training: False, self.X: mfccs, self.Y: labels, self.T: seq_len}
+    def validate(self, mfccs, labels, seq_len, labels_len):
+        labels = sparse_tuple_from(labels)
+        feed_dict = {self.is_training: False,
+                     self.X: mfccs, self.Y: labels, self.T: seq_len}
         return self.sess.run([self.loss, self.mean_ler], feed_dict=feed_dict)
 
-    def evaluate(self, mfccs, labels, seq_len, transcripts):
-        labels = sparse_tuple_from(labels, transcripts)
-        feed_dict={self.is_training: False, self.X: mfccs, self.Y: labels, self.T: seq_len}
+    def evaluate(self, mfccs, labels, seq_len, labels_len):
+        labels = sparse_tuple_from(labels)
+        feed_dict = {self.is_training: False,
+                     self.X: mfccs, self.Y: labels, self.T: seq_len}
         return self.sess.run([self.model, self.loss, self.mean_ler], feed_dict=feed_dict)
 
     def decode(self, mfccs, seq_len):
-        feed_dict={self.is_training: False, self.X: mfccs, self.T: seq_len}
+        feed_dict = {self.is_training: False, self.X: mfccs, self.T: seq_len}
         return self.sess.run(self.model, feed_dict=feed_dict)
 
-    def train(self, mfccs, labels, seq_len, transcripts):
-        labels = sparse_tuple_from(labels, transcripts)
+    def train(self, mfccs, labels, seq_len, labels_len):
+        labels = sparse_tuple_from(labels)
         self.global_step += 1
-        feed_dict={self.is_training: True, self.X: mfccs, self.Y: labels, self.T: seq_len}
+        feed_dict = {self.is_training: True,
+                     self.X: mfccs, self.Y: labels, self.T: seq_len}
         _, loss_val, mean_ler_value = self.sess.run(
             [self.optimizer, self.loss, self.mean_ler], feed_dict=feed_dict)
         return loss_val, mean_ler_value

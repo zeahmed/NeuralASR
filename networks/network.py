@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
+
 from logger import get_logger
+
 
 class Network:
     def __init__(self):
@@ -10,11 +12,11 @@ class Network:
         pass
 
     @abstractmethod
-    def validate(self, mfccs, labels, seq_len, transcripts):
+    def validate(self, mfccs, labels, seq_len, labels_len):
         pass
 
     @abstractmethod
-    def evaluate(self, mfccs, labels, seq_len, transcripts):
+    def evaluate(self, mfccs, labels, seq_len, labels_len):
         pass
 
     @abstractmethod
@@ -22,5 +24,5 @@ class Network:
         pass
 
     @abstractmethod
-    def train(self, mfccs, labels, seq_len, transcripts):
+    def train(self, mfccs, labels, seq_len, labels_len):
         pass

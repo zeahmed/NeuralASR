@@ -2,6 +2,8 @@ import argparse
 import os
 import time
 
+import numpy as np
+
 from common import convert_2_str
 from config import Config
 from dataset import DataSet
@@ -21,18 +23,19 @@ def decode(dataTest, config):
     while dataTest.has_more_batches():
         global_step += 1
         t0 = time.time()
-        mfccs, labels, seq_len, transcripts = dataTest.get_next_batch()
+        mfccs, labels, seq_len, labels_len = dataTest.get_next_batch()
         output, valid_loss_val,  valid_mean_ler_value = network.evaluate(
-            mfccs, labels, seq_len, transcripts)
+            mfccs, labels, seq_len, labels_len)
         logger.info('Valid: batch_cost = %.4f' % (valid_loss_val) +
                     ', batch_ler = %.4f' % (valid_mean_ler_value))
         metrics['test_time_sec'] = metrics['test_time_sec'] + \
             (time.time() - t0)
         metrics['avg_loss'] += valid_loss_val
         metrics['avg_ler'] += valid_mean_ler_value
-        str_decoded = convert_2_str(output, config.symbols)
+        str_decoded = config.symbols.convert_to_str(np.asarray(output[1]))
         logger.info('Decoded: ' + str_decoded)
-        logger.info('Original: ' + transcripts[0].replace('_', ' '))
+        str_labels = config.symbols.convert_to_str(np.asarray(labels[0]))
+        logger.info('Original: ' + str_labels)
 
     logger.info("Finished Decoding!!!")
     logger.info('Decoded Time = %.4fs, avg_loss = %.4f, avg_ler = %.4f' % (
