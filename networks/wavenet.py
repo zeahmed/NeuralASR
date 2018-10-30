@@ -118,7 +118,7 @@ class WaveNet(TensorFlowNetwork):
 
         return out
 
-    def create_network(self, features, labels, seq_len, num_classes, is_training):
+    def create_network(self, features, labels, seq_len, labels_len, num_classes, is_training):
         '''
         This network is similar to wavenet https://github.com/buriburisuri/speech-to-text-wavenet
         '''

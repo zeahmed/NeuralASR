@@ -8,7 +8,7 @@ class Network:
         self.logger = get_logger()
 
     @abstractmethod
-    def create_network(self, features, labels, seq_len, num_classes, is_training):
+    def create_network(self, features, labels, seq_len, labels_len, num_classes, is_training):
         pass
 
     @abstractmethod

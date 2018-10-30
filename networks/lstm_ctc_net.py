@@ -7,7 +7,7 @@ class LstmCTCNet(TensorFlowNetwork):
     def __init__(self, config, fortraining=False):
         TensorFlowNetwork.__init__(self, config, fortraining)
 
-    def create_network(self, features, labels, seq_len, num_classes, is_training):
+    def create_network(self, features, labels, seq_len, labels_len, num_classes, is_training):
         '''
         Simple LSTM network
         '''

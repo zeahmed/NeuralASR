@@ -11,28 +11,28 @@ from .network import Network
 
 
 class TensorFlowNetwork(Network):
-    def __init__(self, config, fortraining=False):
+    def __init__(self, config, fortraining=False, isLabelSparse=True):
         Network.__init__(self)
         self.config = config
-        num_classes = config.symbols.counter
-        num_gpus = config.num_gpus
-        learningrate = config.learningrate
+        self.num_classes = config.symbols.counter
         tf.set_random_seed(1)
         self.is_training = tf.placeholder(tf.bool, name="is_training")
-
-        self.X = tf.placeholder(
-            tf.float32, shape=[None, None, config.feature_size], name="X")
-        self.T = tf.placeholder(tf.int32, shape=[None], name="T")
-        self.Y = tf.sparse_placeholder(tf.int32, name="Y")
+        self.features = tf.placeholder(
+            tf.float32, shape=[None, None, config.feature_size], name="features")
+        self.seq_len = tf.placeholder(tf.int32, shape=[None], name="seq_len")
+        if isLabelSparse:
+            self.labels = tf.sparse_placeholder(tf.int32, name="labels")
+        else:
+            self.labels = tf.placeholder(tf.int32, shape=[None, None], name="labels")
+        self.labels_len= tf.placeholder(tf.int32,shape=[None], name="labels_len")
 
         if fortraining:
             self.logger.info('Initializing network for training.')
-            self.optimizer, self.loss, self.mean_ler = self.setup_training_network(
-                self.X, self.Y, self.T, num_classes, num_gpus, learningrate, self.is_training)
+            self.optimizer, self.loss, self.mean_ler = self.setup_training_network()
         else:
             self.logger.info('Initializing network for inference.')
             self.logits, self.loss, self.model, self.log_prob, self.mean_ler = \
-                self.create_network(self.X, self.Y, self.T,
+                self.create_network(self.features, self.labels, self.seq_len, self.labels_len,
                                     config.symbols.counter, self.is_training)
 
         init = tf.global_variables_initializer()
@@ -67,10 +67,6 @@ class TensorFlowNetwork(Network):
         ler = tf.edit_distance(tf.cast(model, tf.int32), labels)
         mean_ler = tf.reduce_mean(ler)
         return mean_ler
-
-    @abstractmethod
-    def create_network(self, features, labels, seq_len, num_classes, is_training):
-        pass
 
     def average_gradients(self, tower_grads):
         average_grads = []
@@ -115,14 +111,14 @@ class TensorFlowNetwork(Network):
 
         return [tf.stack(o, axis=0) for o in out_split]
 
-    def setup_training_network(self, X, Y, T, num_classes, num_gpus, learningrate, is_training):
+    def setup_training_network(self):
         adam_opt = tf.train.AdamOptimizer(
-            learning_rate=learningrate)  # .minimize(loss)
+            learning_rate=self.config.learningrate)  # .minimize(loss)
         tower_grads = []
 
-        def create_ops(X, Y, T):
+        def create_ops(X, Y, T, O):
             _, loss, _, _, ler = self.create_network(
-                X, Y, T, num_classes, is_training)
+                X, Y, T, O, self.num_classes, self.is_training)
             grads = adam_opt.compute_gradients(
                 loss, colocate_gradients_with_ops=True)
 
@@ -130,11 +126,11 @@ class TensorFlowNetwork(Network):
             tower_grads.append(grads)
             return loss, ler
 
-        if num_gpus <= 1:
-            loss, mean_ler = create_ops(X=X, Y=Y, T=T)
+        if self.config.num_gpus <= 1:
+            loss, mean_ler = create_ops(self.features, self.labels, self.seq_len, self.labels_len)
         else:
             loss, ler = self.make_parallel(
-                create_ops, num_gpus=num_gpus, X=X, Y=Y, T=T)
+                create_ops, num_gpus=self.config.num_gpus, X=self.features, Y=self.labels, T=self.seq_len, O=self.labels_len)
             loss = tf.reduce_mean(loss)
             mean_ler = tf.reduce_mean(ler)
 
@@ -169,24 +165,24 @@ class TensorFlowNetwork(Network):
     def validate(self, mfccs, labels, seq_len, labels_len):
         labels = sparse_tuple_from(labels)
         feed_dict = {self.is_training: False,
-                     self.X: mfccs, self.Y: labels, self.T: seq_len}
+                     self.features: mfccs, self.labels: labels, self.seq_len: seq_len}
         return self.sess.run([self.loss, self.mean_ler], feed_dict=feed_dict)
 
     def evaluate(self, mfccs, labels, seq_len, labels_len):
         labels = sparse_tuple_from(labels)
         feed_dict = {self.is_training: False,
-                     self.X: mfccs, self.Y: labels, self.T: seq_len}
+                     self.features: mfccs, self.labels: labels, self.seq_len: seq_len}
         return self.sess.run([self.model, self.loss, self.mean_ler], feed_dict=feed_dict)
 
     def decode(self, mfccs, seq_len):
-        feed_dict = {self.is_training: False, self.X: mfccs, self.T: seq_len}
+        feed_dict = {self.is_training: False, self.features: mfccs, self.seq_len: seq_len}
         return self.sess.run(self.model, feed_dict=feed_dict)
 
     def train(self, mfccs, labels, seq_len, labels_len):
         labels = sparse_tuple_from(labels)
         self.global_step += 1
         feed_dict = {self.is_training: True,
-                     self.X: mfccs, self.Y: labels, self.T: seq_len}
+                     self.features: mfccs, self.labels: labels, self.seq_len: seq_len}
         _, loss_val, mean_ler_value = self.sess.run(
             [self.optimizer, self.loss, self.mean_ler], feed_dict=feed_dict)
         return loss_val, mean_ler_value
