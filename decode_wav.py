@@ -2,7 +2,6 @@ import argparse
 
 import numpy as np
 
-from common import convert_2_str
 from config import Config
 from logger import get_logger
 from utils import compute_mfcc_and_read_transcription
@@ -14,7 +13,7 @@ def decode(config, mfcc, seq_len):
     network = config.load_network(fortraining=False)
 
     output = network.decode(mfcc, seq_len)
-    str_decoded = convert_2_str(output, config.symbols)
+    str_decoded = config.symbols.convert_to_str(output[1])
     logger.info('Decoded: ' + str_decoded)
 
 

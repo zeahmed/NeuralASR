@@ -4,7 +4,6 @@ import time
 
 import numpy as np
 
-from common import convert_2_str
 from config import Config
 from dataset import DataSet
 from logger import get_logger
