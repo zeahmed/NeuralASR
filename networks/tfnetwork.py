@@ -13,6 +13,7 @@ from .network import Network
 class TensorFlowNetwork(Network):
     def __init__(self, config, fortraining=False, isLabelSparse=True):
         Network.__init__(self)
+        self.fortraining = fortraining
         self.config = config
         self.num_classes = config.symbols.counter
         tf.set_random_seed(1)
@@ -172,11 +173,12 @@ class TensorFlowNetwork(Network):
         labels = sparse_tuple_from(labels)
         feed_dict = {self.is_training: False,
                      self.features: mfccs, self.labels: labels, self.seq_len: seq_len}
-        return self.sess.run([self.model, self.loss, self.mean_ler], feed_dict=feed_dict)
+        m, loss, ler = self.sess.run([self.model, self.loss, self.mean_ler], feed_dict=feed_dict)
+        return m[1], loss, ler
 
     def decode(self, mfccs, seq_len):
         feed_dict = {self.is_training: False, self.features: mfccs, self.seq_len: seq_len}
-        return self.sess.run(self.model, feed_dict=feed_dict)
+        return self.sess.run(self.model, feed_dict=feed_dict)[1]
 
     def train(self, mfccs, labels, seq_len, labels_len):
         labels = sparse_tuple_from(labels)

@@ -53,11 +53,14 @@ class DataSet:
         labels_lens = [labels_lens]
         self.index += 1
         max_time = mfccs[0].shape[0]
+        max_label_len = labels_lens[0]
         while self.index % self.config.batch_size > 0 and self.index < len(self.X):
             mfcc, label, seq_len, labels_len = self.load_pkl(
                 self.X[self.index])
             if max_time < mfcc.shape[0]:
                 max_time = mfcc.shape[0]
+            if max_label_len < labels_len:
+                max_label_len = labels_len
             self.index += 1
             mfccs += [mfcc]
             labels += [label]
@@ -67,8 +70,11 @@ class DataSet:
         for i in range(len(mfccs)):
             mfccs[i] = np.pad(mfccs[i], ((0, max_time-mfccs[i].shape[0]),
                                          (0, 0)), 'constant', constant_values=(0, 0))
-        mfccs = np.asarray(mfccs)
-        return np.asarray(mfccs), labels, seq_lens, labels_lens
+        
+        for i in range(len(labels)):
+            labels[i] = np.pad(labels[i], (0, max_label_len-labels_lens[i])
+                                         , 'constant', constant_values=(0, 0))
+        return np.asarray(mfccs), np.asarray(labels), seq_lens, labels_lens
 
     def get_feature_shape(self):
         return [self.config.batch_size, None, self.config.feature_size]

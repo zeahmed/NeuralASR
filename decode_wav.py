@@ -13,7 +13,7 @@ def decode(config, mfcc, seq_len):
     network = config.load_network(fortraining=False)
 
     output = network.decode(mfcc, seq_len)
-    str_decoded = config.symbols.convert_to_str(output[1])
+    str_decoded = config.symbols.convert_to_str(output)
     logger.info('Decoded: ' + str_decoded)
 
 

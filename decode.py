@@ -31,7 +31,7 @@ def decode(dataTest, config):
             (time.time() - t0)
         metrics['avg_loss'] += valid_loss_val
         metrics['avg_ler'] += valid_mean_ler_value
-        str_decoded = config.symbols.convert_to_str(np.asarray(output[1]))
+        str_decoded = config.symbols.convert_to_str(np.asarray(output))
         logger.info('Decoded: ' + str_decoded)
         str_labels = config.symbols.convert_to_str(np.asarray(labels[0]))
         logger.info('Original: ' + str_labels)
