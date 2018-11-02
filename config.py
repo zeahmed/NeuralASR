@@ -60,6 +60,11 @@ class Config(object):
             self.mfcc_input = parameters['input']
         if 'output' in parameters:
             self.mfcc_output = parameters['output']
+        self.start_marker = self.end_marker = None
+        if 'start_marker' in parameters:
+            self.start_marker = parameters['start_marker']
+        if 'end_marker' in parameters:
+            self.end_marker = parameters['end_marker']
 
         parameters = self.cfg['Test']
         if 'input' in parameters:
@@ -95,6 +100,8 @@ class Config(object):
         config_str += ('test_input=%s\n' % self.test_input)
         config_str += ('mfcc_input=%s\n' % self.mfcc_input)
         config_str += ('mfcc_output=%s\n' % self.mfcc_output)
+        config_str += ('start_marker=%s\n' % self.start_marker)
+        config_str += ('end_marker=%s\n' % self.end_marker)
         logger.info(config_str)
 
     def write_symbols(self):

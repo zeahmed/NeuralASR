@@ -13,6 +13,7 @@ class DataSet:
     def __init__(self, filename, config):
         self.filename = filename
         self.config = config
+        self.padding_id = config.symbols.get_padding_id()
         self.index = 0
         with open(self.filename, 'r') as f:
             self.X = f.readlines()
@@ -69,11 +70,11 @@ class DataSet:
 
         for i in range(len(mfccs)):
             mfccs[i] = np.pad(mfccs[i], ((0, max_time-mfccs[i].shape[0]),
-                                         (0, 0)), 'constant', constant_values=(0, 0))
+                                         (0, 0)), 'constant', constant_values=(self.padding_id, self.padding_id))
         
         for i in range(len(labels)):
             labels[i] = np.pad(labels[i], (0, max_label_len-labels_lens[i])
-                                         , 'constant', constant_values=(0, 0))
+                                         , 'constant', constant_values=(self.padding_id, self.padding_id))
         return np.asarray(mfccs), np.asarray(labels), seq_lens, labels_lens
 
     def get_feature_shape(self):
@@ -92,7 +93,7 @@ if __name__ == '__main__':
     parser.add_argument("config", help="Configuration file.")
     args = parser.parse_args()
 
-    config = Config(args.config)
+    config = Config(args.config, True)
     config.epochs = 1
     data = DataSet(config.train_input, config)
     i = 0

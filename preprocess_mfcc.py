@@ -5,24 +5,28 @@ import sys
 
 import numpy as np
 import pandas as pd
-from utils import compute_mfcc_and_read_transcription
 
 from audiosample import AudioSample
 from config import Config
 from logger import get_logger
 from symbols import Symbols
+from utils import compute_mfcc_and_read_transcription
 
 logger = get_logger()
 
 
-def update_symbols(sym, clean_transcription, n=1):
-    labels = []
+def update_symbols(config, clean_transcription):
+    sym = config.symbols
+    n = config.label_context
+    labels = [sym.get_id(config.start_marker)] if config.start_marker else []
     num_context = n // 2
-    padded_str = ('$' * num_context)
+    padded_str = (config.start_marker * num_context)
     padded_transcript = padded_str + clean_transcription + padded_str
     for i in range(len(padded_transcript) - num_context):
         id = sym.insert_sym(padded_transcript[i:i + n])
         labels.append(id)
+    if config.end_marker:
+        labels.append(sym.get_id(config.end_marker))
     return np.asarray(labels, dtype=np.int32)
 
 
@@ -44,10 +48,10 @@ def write_data(data, config, scp_file_name):
                     train_X[i], config.samplerate, config.numcontext, config.numcep, config.punc_regex, train_Y[i])
 
                 if len(clean_transcription) <= mfcc.shape[0]:
-                    labels = update_symbols(
-                        config.symbols, clean_transcription, config.label_context)
+                    labels = update_symbols(config, clean_transcription)
                     filename = os.path.basename(train_X[i]).replace(".wav", "")
-                    filepath = os.path.join(config.mfcc_output, filename + ".pkl")
+                    filepath = os.path.join(
+                        config.mfcc_output, filename + ".pkl")
                     f.write(filename + ".pkl\n")
                     with open(filepath, 'wb') as output:
                         audio = AudioSample(filename,
@@ -75,6 +79,11 @@ if __name__ == '__main__':
 
     np.set_printoptions(suppress=True)
 
+    config.symbols.insert_padding()
+    if config.start_marker:
+        config.symbols.insert_sym(config.start_marker)
+    if config.end_marker:
+        config.symbols.insert_sym(config.end_marker)
     train_scp_file = os.path.join(config.mfcc_output, "train.scp")
     write_data(dataTrain, config, train_scp_file)
 

@@ -57,7 +57,7 @@ if __name__ == '__main__':
     dataTrain = DataSet(config.train_input, config)
     dataValid = None
     if config.test_input:
-        config_test = Config(args.config)
+        config_test = Config(args.config, isTraining=True)
         config_test.epochs = None
         dataValid = DataSet(config_test.test_input, config_test)
     train_model(dataTrain, dataValid, config)

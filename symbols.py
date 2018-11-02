@@ -9,6 +9,7 @@ class Symbols(object):
     def __init__(self, label_context, filename=None):
         self.label_context = label_context
         self.blank = '<blank>'
+        self.padding = '<padding>'
         self.counter = 0
         self.filename = filename
         self.sym_to_id = {}
@@ -33,6 +34,12 @@ class Symbols(object):
 
     def insert_blank(self):
         return self.insert_sym(self.blank)
+
+    def insert_padding(self):
+        return self.insert_sym(self.padding)
+
+    def get_padding_id(self):
+        return self.sym_to_id[self.padding]
 
     def get_id(self, sym):
         return self.sym_to_id[sym]

@@ -164,13 +164,13 @@ class TensorFlowNetwork(Network):
                         global_step=self.global_step)
 
     def validate(self, mfccs, labels, seq_len, labels_len):
-        labels = sparse_tuple_from(labels)
+        labels = sparse_tuple_from(labels, labels_len)
         feed_dict = {self.is_training: False,
                      self.features: mfccs, self.labels: labels, self.seq_len: seq_len}
         return self.sess.run([self.loss, self.mean_ler], feed_dict=feed_dict)
 
     def evaluate(self, mfccs, labels, seq_len, labels_len):
-        labels = sparse_tuple_from(labels)
+        labels = sparse_tuple_from(labels, labels_len)
         feed_dict = {self.is_training: False,
                      self.features: mfccs, self.labels: labels, self.seq_len: seq_len}
         m, loss, ler = self.sess.run([self.model, self.loss, self.mean_ler], feed_dict=feed_dict)
@@ -181,7 +181,7 @@ class TensorFlowNetwork(Network):
         return self.sess.run(self.model, feed_dict=feed_dict)[1]
 
     def train(self, mfccs, labels, seq_len, labels_len):
-        labels = sparse_tuple_from(labels)
+        labels = sparse_tuple_from(labels, labels_len)
         self.global_step += 1
         feed_dict = {self.is_training: True,
                      self.features: mfccs, self.labels: labels, self.seq_len: seq_len}
