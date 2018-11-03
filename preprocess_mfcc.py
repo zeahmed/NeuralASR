@@ -17,13 +17,12 @@ logger = get_logger()
 
 def update_symbols(config, clean_transcription):
     sym = config.symbols
-    n = config.label_context
     labels = [sym.get_id(config.start_marker)] if config.start_marker else []
-    num_context = n // 2
-    padded_str = (config.start_marker * num_context)
+    num_context = config.label_context
+    padded_str = ((config.start_marker if config.start_marker else '^') * num_context)
     padded_transcript = padded_str + clean_transcription + padded_str
-    for i in range(len(padded_transcript) - num_context):
-        id = sym.insert_sym(padded_transcript[i:i + n])
+    for i in range(len(padded_transcript) - num_context*2):
+        id = sym.insert_sym(padded_transcript[i:i + (2 * num_context + 1)])
         labels.append(id)
     if config.end_marker:
         labels.append(sym.get_id(config.end_marker))

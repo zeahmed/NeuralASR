@@ -51,7 +51,10 @@ class Symbols(object):
         return list(self.sym_to_id.values())
 
     def convert_to_str(self, l):
-        str_decoded = ''.join([self.get_sym(x)[self.label_context // 2] for x in l])
+        if self.label_context > 0:
+            str_decoded = ''.join([self.get_sym(x)[self.label_context:-self.label_context] for x in l])
+        else:
+            str_decoded = ''.join([self.get_sym(x) for x in l])
         str_decoded = str_decoded.replace(self.blank, '')
         str_decoded = str_decoded.replace('_', ' ')
         return str_decoded
