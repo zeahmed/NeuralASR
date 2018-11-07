@@ -1,8 +1,7 @@
 import re
 
-import numpy as np
-
 import librosa
+import numpy as np
 from python_speech_features import mfcc
 
 
@@ -24,7 +23,7 @@ def include_context(audio_mfcc, numcontext, numcep):
 
 def convert_to_mfcc(wavfile, sr, numcontext, numcep):
     audio, _ = librosa.load(wavfile, mono=True, sr=sr)
-    audio_mfcc = mfcc(audio, samplerate=sr, numcep=numcep)
+    audio_mfcc = mfcc(audio, samplerate=sr, numcep=numcep, nfilt=128)
     if numcontext > 0:
         audio_mfcc = include_context(audio_mfcc, numcontext, numcep)
     audio_mfcc = (audio_mfcc - np.mean(audio_mfcc)) / np.std(audio_mfcc)
@@ -37,8 +36,10 @@ def read_label_text(txtfile, punc_regex):
 
     transcription = transcription.strip().lower()
     clean_transcription = re.sub(punc_regex, '', transcription)
-    clean_transcription = clean_transcription.replace('  ', ' ').replace(' ', '_')
+    clean_transcription = clean_transcription.replace(
+        '  ', ' ').replace(' ', '_')
     return clean_transcription
+
 
 def sparse_tuple_from(sequences, output_lengths):
     indices = []
@@ -55,6 +56,7 @@ def sparse_tuple_from(sequences, output_lengths):
         indices).max(0)[1] + 1], dtype=np.int64)
 
     return indices, values, shape
+
 
 def compute_mfcc_and_read_transcription(wavfile, sr, numcontext, numcep, punc_regex=None, txtfile=None):
     audio_mfcc = convert_to_mfcc(wavfile, sr, numcontext, numcep)
