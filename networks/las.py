@@ -67,7 +67,7 @@ class LAS(TensorFlowNetwork):
         if self.fortraining:
             max_label_len = tf.fill([batch_size],tf.shape(labels)[1])
             helper = tf.contrib.seq2seq.ScheduledEmbeddingTrainingHelper(
-                            tf.nn.embedding_lookup(embeddings, labels), max_label_len, embeddings, 0.3)
+                            tf.nn.embedding_lookup(embeddings, labels), max_label_len, embeddings, 0.1)
             # helper = tf.contrib.seq2seq.TrainingHelper(
             #                 tf.nn.embedding_lookup(embeddings, labels), max_label_len)
             max_iterations = tf.shape(labels)[1]

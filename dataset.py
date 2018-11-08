@@ -55,7 +55,11 @@ class DataSet:
         self.index += 1
         max_time = mfccs[0].shape[0]
         max_label_len = labels_lens[0]
-        while self.index % self.config.batch_size > 0 and self.index < len(self.X):
+        while self.index % self.config.batch_size > 0:
+            if self.index >= len(self.X):
+                if self.config.batch_size == len(mfccs):
+                    break
+                self.index -= 1
             mfcc, label, seq_len, labels_len = self.load_pkl(
                 self.X[self.index])
             if max_time < mfcc.shape[0]:
